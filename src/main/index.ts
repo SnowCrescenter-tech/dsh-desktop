@@ -1,65 +1,53 @@
 /**
- * 主进程入口 —— 脚手架占位实现。
+ * 主进程入口 —— 装配外壳能力 (设计规范 dsh-desktop-design-spec.md)。
  *
- * 当前仅创建主窗口并加载 renderer 产物,用于验证 Electron + electron-vite
- * 三段式 (main/preload/renderer) 工具链可运行。后续在此接入设计规范
- * (dsh-desktop-design-spec.md) 中的无边框窗口 / 托盘 / 引导对话框 /
- * 本地服务生命周期等外壳能力。
+ * 本文件只做组合 (composition root):
+ *   - app ready 之前: Per-Monitor v2 DPI 感知开关;
+ *   - app ready 之后: 创建无边框窗口控制器 (src/main/window.ts),
+ *     标题栏 UI 本体、托盘与本地服务生命周期由后续任务接入;
+ *   - 首次运行 (无已保存 API Key, spec §4): 在主窗口上方弹出引导对话框。
  */
-import { app, BrowserWindow, shell } from 'electron'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { app, BrowserWindow } from 'electron';
 
-// ESM 下无 __dirname,基于 import.meta.url 推导构建产物所在目录 (dist/main)。
-const appDir = dirname(fileURLToPath(import.meta.url))
+import {
+  createOnboardingWindow,
+  hasSavedApiKey,
+  registerOnboardingIpc,
+} from './onboarding.js';
+import {
+  createWindowController,
+  enablePerMonitorV2,
+} from './window.js';
 
-function createWindow(): void {
-  const mainWindow = new BrowserWindow({
-    width: 1080,
-    height: 720,
-    minWidth: 800,
-    minHeight: 560,
-    show: false,
-    autoHideMenuBar: true,
-    webPreferences: {
-      // ESM 预加载脚本由 electron-vite 输出为 index.mjs
-      preload: join(appDir, '../preload/index.mjs'),
-      // ESM preload 要求关闭 sandbox (electron-vite ESM 模板约定)
-      sandbox: false,
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-  })
-
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
-  })
-
-  // 外部链接一律交给系统浏览器,避免在应用窗口内打开
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    void shell.openExternal(details.url)
-    return { action: 'deny' }
-  })
-
-  // dev 模式加载 electron-vite dev server;生产模式加载构建产物
-  const devServerUrl = process.env['ELECTRON_RENDERER_URL']
-  if (devServerUrl) {
-    void mainWindow.loadURL(devServerUrl)
-  } else {
-    void mainWindow.loadFile(join(appDir, '../renderer/index.html'))
-  }
-}
+// 必须发生在 app ready 之前 (Chromium 启动参数)
+enablePerMonitorV2(app);
 
 app.whenReady().then(() => {
-  createWindow()
+  const controller = createWindowController({ app });
+
+  // 引导对话框的 IPC (submit-key / dismiss) 必须在窗口加载前注册
+  registerOnboardingIpc();
+
+  // 首次运行 (spec §4): 本机无已保存的 API Key 时, 在主窗口上方弹出引导对话框。
+  // 用户"稍后再说"仅关闭对话框 —— Key 仍未配置, 下次启动会再次弹出。
+  if (!hasSavedApiKey()) {
+    createOnboardingWindow(controller.getWindow());
+  }
 
   app.on('activate', () => {
-    // macOS 惯例:点击 Dock 图标且无窗口时重建窗口
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-})
+    // macOS 惯例: 点击 Dock 图标恢复窗口 (隐藏到托盘后同样适用)
+    if (BrowserWindow.getAllWindows().length > 0) {
+      controller.show();
+    }
+  });
+
+  // 真正退出前解除 IPC 处理器, 避免残留
+  app.on('before-quit', () => {
+    controller.dispose();
+  });
+});
 
 app.on('window-all-closed', () => {
-  // Windows/Linux 全部窗口关闭即退出;macOS 保持应用存活
-  if (process.platform !== 'darwin') app.quit()
-})
+  // Windows/Linux 全部窗口关闭即退出; macOS 保持应用存活
+  if (process.platform !== 'darwin') app.quit();
+});

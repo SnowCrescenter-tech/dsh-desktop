@@ -64,6 +64,7 @@ const api: DshDesktop = {
   },
   onboarding: {
     submitKey: (key) => ipcRenderer.invoke(onboardingChannels.submitKey, { key }),
+    dismiss: () => ipcRenderer.invoke(onboardingChannels.dismiss),
   },
   autolaunch: {
     get: () => ipcRenderer.invoke(autolaunchChannels.get),

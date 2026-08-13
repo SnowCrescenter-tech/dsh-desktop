@@ -1,0 +1,19 @@
+{
+  "name": "@dsh-desktop/client",
+  "version": "0.2.0",
+  "description": "dsh-desktop 浏览器侧桌面桥接插件（随 desktop profile 加载进 dsh Web UI）",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=4.0.0"
+  }
+}

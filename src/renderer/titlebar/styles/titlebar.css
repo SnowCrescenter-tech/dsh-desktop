@@ -1,0 +1,143 @@
+/**
+ * 标题栏样式 (设计规范 §3.1) —— 36px 不透明条, 整条可拖动。
+ *
+ * 令牌来源: styles/tokens.css (T2, 与 src/shared/tokens.ts 同源)。
+ * 规范字面量 (10px 字形 / 1.5px 描边 / 16px 鲸鱼 / 关闭钮白色字形) 是
+ * §3.1 直接规定, tokens.css 无对应令牌, 按规范原样书写。
+ *
+ * §1 约束: 无装饰、无阴影; 唯一的过渡是 §5 规定的
+ * 悬停底色 100ms ease-out 与状态点颜色 150ms (不脉冲)。
+ */
+
+@import '../../styles/tokens.css';
+@import '../../styles/base.css';
+
+/* ------------------------------------------------------------------ */
+/* 整条标题栏: 36px 高, 不透明 (§3.1 / §6.5), 全宽拖拽区                 */
+/* ------------------------------------------------------------------ */
+
+.titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--titlebar-height);
+  padding-left: var(--titlebar-padding-left);
+  /* 不透明外壳 — 绝不在 webview 上方做透明层 (§3.1) */
+  background: var(--bg-window);
+  -webkit-app-region: drag;
+}
+
+/* ------------------------------------------------------------------ */
+/* 左侧: 鲸鱼 16px → 8px → 应用名 12px/500 → 8px → 状态点 6px            */
+/* ------------------------------------------------------------------ */
+
+.titlebar__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.titlebar__whale {
+  display: inline-flex;
+  flex: none;
+  /* 16px 鲸鱼线稿 (spec §3.1); 品牌蓝由令牌驱动 (currentColor) */
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+}
+
+.titlebar__whale svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.titlebar__app-name {
+  font-family: var(--font-ui);
+  font-size: var(--font-size-xs); /* 12px */
+  font-weight: var(--font-weight-medium); /* 500 */
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.titlebar__status-dot {
+  flex: none;
+  width: var(--status-dot-size); /* 6px */
+  height: var(--status-dot-size);
+  border-radius: var(--radius-pill);
+  background: var(--text-tertiary); /* 默认 = 启动中/未就绪 */
+  transition: background-color var(--duration-status); /* §5: 150ms, 不脉冲 */
+}
+
+.titlebar__status-dot[data-tone='running'] {
+  background: var(--accent-teal);
+}
+
+.titlebar__status-dot[data-tone='error'] {
+  background: var(--error);
+}
+
+/* data-tone="starting" (含 stopped) → 保持默认 text-tertiary */
+
+/* ------------------------------------------------------------------ */
+/* 右侧控制钮: 命中区 46×36, 10px 字形 / 1.5px 描边 (§3.1)               */
+/* ------------------------------------------------------------------ */
+
+.titlebar__controls {
+  display: flex;
+  flex: none;
+  height: var(--control-button-height);
+  -webkit-app-region: no-drag;
+}
+
+.titlebar__control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-button-width); /* 46px 命中区 */
+  height: var(--control-button-height); /* 36px */
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  /* 字形字体栈: Segoe UI Symbol 兜底几何/装饰字形, 常规 UI 字体殿后 */
+  font-family: 'Segoe UI Symbol', 'Segoe Fluent Icons', 'Segoe MDL2 Assets',
+    var(--font-ui);
+  font-size: 10px; /* §3.1 字形尺寸 */
+  -webkit-text-stroke: 1.5px currentColor; /* §3.1 字形描边 */
+  cursor: default;
+  -webkit-app-region: no-drag;
+  transition: background-color var(--duration-hover) var(--easing-out); /* §5: 100ms ease-out */
+}
+
+/* ------------------------------------------------------------------ */
+/* 未激活窗口: 应用名 / 状态点 / 字形全部降为 text-tertiary (§3.1)        */
+/* 该块置于悬停规则之前, 悬停反馈始终优先 (Windows 惯例)                 */
+/* ------------------------------------------------------------------ */
+
+.titlebar.inactive .titlebar__whale,
+.titlebar.inactive .titlebar__app-name,
+.titlebar.inactive .titlebar__status-dot,
+.titlebar.inactive .titlebar__control {
+  color: var(--text-tertiary);
+}
+
+.titlebar.inactive .titlebar__status-dot {
+  background: var(--text-tertiary);
+}
+
+/* ------------------------------------------------------------------ */
+/* 悬停: 底色变化 (bg-hover), 不做浮起 (§2.6)                           */
+/* 关闭钮悬停: #E81123/#D13438 底 + 白色字形 (Windows 惯例, §3.1)        */
+/* ------------------------------------------------------------------ */
+
+.titlebar__control:hover {
+  background: var(--bg-hover);
+}
+
+.titlebar__control--close:hover {
+  background: var(--close-hover);
+  color: #ffffff; /* §3.1: 关闭钮悬停白色字形 (令牌外 Windows 惯例) */
+}

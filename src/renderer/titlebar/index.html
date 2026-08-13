@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP 与主页面一致:仅允许自身源,内联样式例外 (开发期注入) -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+    />
+    <title>DeepSeek Harness</title>
+    <link rel="stylesheet" href="./styles/titlebar.css" />
+  </head>
+  <body>
+    <!--
+      36px 不透明标题栏 (设计规范 §3.1):
+      整条为拖拽区 (-webkit-app-region: drag),控制钮区域除外;
+      左侧 鲸鱼 16px → 8px → 应用名 12px/500 → 8px → 状态点 6px;
+      右侧 三个 46×36 命中区控制钮 (10px / 1.5px 描边字形)。
+    -->
+    <header class="titlebar" id="titlebar">
+      <div class="titlebar__left">
+        <span class="titlebar__whale" id="titlebar-whale" aria-hidden="true"></span>
+        <span class="titlebar__app-name">DeepSeek Harness</span>
+        <span
+          class="titlebar__status-dot"
+          id="status-dot"
+          data-tone="starting"
+          title="本地服务运行中"
+          aria-hidden="true"
+        ></span>
+      </div>
+      <div class="titlebar__controls">
+        <button
+          class="titlebar__control"
+          id="btn-minimize"
+          type="button"
+          aria-label="最小化"
+        >
+          —
+        </button>
+        <button
+          class="titlebar__control"
+          id="btn-maximize"
+          type="button"
+          aria-label="最大化"
+        >
+          □
+        </button>
+        <button
+          class="titlebar__control titlebar__control--close"
+          id="btn-close"
+          type="button"
+          aria-label="关闭"
+        >
+          ×
+        </button>
+      </div>
+    </header>
+    <script type="module" src="./titlebar.ts"></script>
+  </body>
+</html>

@@ -47,6 +47,11 @@ export const statusChannels = {
 export const onboardingChannels = {
   /** 提交 API Key 校验并保存 */
   submitKey: 'onboarding:submit-key',
+  /**
+   * 关闭引导对话框 (ESC / "稍后再说" / 保存成功后的退场落地)。
+   * 与 window:close (隐藏到托盘) 语义不同, 仅作用于引导对话框自身。
+   */
+  dismiss: 'onboarding:dismiss',
 } as const;
 
 /* ------------------------------------------------------------------ */
@@ -103,6 +108,7 @@ export const ipcChannelList = [
   windowChannels.getState,
   statusChannels.onState,
   onboardingChannels.submitKey,
+  onboardingChannels.dismiss,
   autolaunchChannels.get,
   autolaunchChannels.set,
   nativeChannels.notify,
@@ -207,6 +213,8 @@ export interface DshDesktop {
   onboarding: {
     /** 提交 API Key 校验并保存; 返回校验结果 */
     submitKey(key: string): Promise<SubmitKeyResult>;
+    /** 关闭引导对话框 (ESC / "稍后再说" / 保存成功后退场) */
+    dismiss(): Promise<void>;
   };
   /** 开机自启 (托盘复选菜单) */
   autolaunch: {

@@ -22,7 +22,7 @@ const kebab = (name: string): string =>
 const interfaceSurface = {
   window: ['minimize', 'maximize', 'unmaximize', 'close', 'getState'],
   status: ['onState'],
-  onboarding: ['submitKey'],
+  onboarding: ['submitKey', 'dismiss'],
   autolaunch: ['get', 'set'],
   native: ['notify'],
   web: ['broadcast'],
