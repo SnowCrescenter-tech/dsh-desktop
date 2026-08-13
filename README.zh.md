@@ -42,98 +42,16 @@ dsh-desktop 把 DeepSeek Harness 的 Web UI 包进一个原生 Windows 桌面程
 
 dsh-desktop 是一个 Electron 外壳。主进程负责窗口、托盘、通知、开机自启，以及启动并守护捆绑的 DeepSeek Harness CLI 的运行时监督器；preload 桥把一份精简且冻结的 `window.dshDesktop` API 暴露给渲染层；窗口自身的 web 内容绘制标题栏，其下方一个沙箱化的 WebContentsView 承载 DeepSeek Harness 的 Web UI；这套 Web UI 跑在 `desktop` profile 上，按序装载 `@deepseek-ai/dsh-base`、`@deepseek-ai/dsh-web-app` 和 `@dsh-desktop/client`。
 
-```mermaid
-flowchart TD
-    classDef main fill:#10131A,stroke:#4D6BFE,stroke-width:2px,color:#E8EAED
-    classDef bridge fill:#EEF1FF,stroke:#4D6BFE,color:#1A1D21
-    classDef renderer fill:#F4F6F9,stroke:#9AA1AC,color:#1A1D21
-    classDef web fill:#FFFFFF,stroke:#12A5A1,stroke-width:2px,color:#1A1D21
-    classDef bundle fill:#FDECEC,stroke:#E5484D,color:#1A1D21
-
-    style MAIN fill:#10131A,stroke:#4D6BFE,color:#E8EAED
-    style BRIDGE fill:#EEF1FF,stroke:#4D6BFE,color:#1A1D21
-    style RENDERER fill:#F4F6F9,stroke:#9AA1AC,color:#1A1D21
-    style WEB fill:#FFFFFF,stroke:#12A5A1,color:#1A1D21
-    style PROFILE fill:#FDECEC,stroke:#E5484D,color:#1A1D21
-
-    subgraph MAIN["Electron 主进程"]
-        M1["index.ts 组合根<br/>单实例锁 · 第二实例唤出已有窗口<br/>退出前: 终止 dsh 进程树 · 销毁托盘"]
-        M2["window.ts 窗口控制器<br/>无边框窗口 · 自绘 36px 标题栏<br/>Win11 DWM 圆角 · WebContentsView 内容区"]
-        M3["tray.ts 系统托盘<br/>打开主界面 · 开机自启 · 关于 · 退出"]
-        M4["notifications.ts 原生通知<br/>AppUserModelID 门控 · 气泡降级"]
-        M5["runtime/state-machine.ts 运行时监督器<br/>spawn dsh --profile desktop --port 0<br/>解析就绪行 · 120s 超时 · 树杀"]
-        M6["profile/bootstrap.ts desktop profile<br/>写盘 profile · 安装客户端插件"]
-        M7["onboarding.ts 首次运行引导<br/>校验 API Key · 写入 DSH_HOME/.env"]
-        M8["autolaunch.ts 开机自启<br/>HKCU Run 注册表键"]
-        M9["ipc.ts 契约处理器<br/>autolaunch · native · web 广播"]
-    end
-
-    subgraph BRIDGE["Preload 桥"]
-        P["preload/index.ts<br/>contextBridge 暴露 window.dshDesktop<br/>window · status · onboarding · autolaunch · native · web"]
-    end
-
-    subgraph RENDERER["渲染层"]
-        R1["titlebar 自绘标题栏<br/>鲸鱼图标 · 状态点 · 最小化/最大化/关闭"]
-        R2["onboarding 引导对话框<br/>420px 模态 · 输入 Key · Enter 提交"]
-    end
-
-    subgraph WEB["WebContentsView 内容区（沙箱化，无 preload）"]
-        W["DeepSeek Harness Web UI<br/>由 desktop profile 提供"]
-    end
-
-    subgraph PROFILE["desktop profile 装载顺序"]
-        B1["@deepseek-ai/dsh-base"]
-        B2["@deepseek-ai/dsh-web-app（提供 Web UI）"]
-        B3["@dsh-desktop/client<br/>托盘命令桥 · 原生通知助手"]
-    end
-
-    M1 --> M2
-    M1 --> M3
-    M1 --> M4
-    M1 --> M5
-    M1 --> M6
-    M1 --> M7
-    M1 --> M8
-    M1 --> M9
-    R1 <--> P
-    R2 <--> P
-    P -- "window:* 契约" --> M2
-    P -- "onboarding:* 契约" --> M7
-    P -- "autolaunch:* / native:* / web:* 契约" --> M9
-    M6 -. "写盘 profile · 安装插件" .-> B1
-    M5 -- "spawn dsh CLI · 装载 desktop profile" --> B1
-    B1 --> B2
-    B2 --> B3
-    B2 -. "提供 Web UI（127.0.0.1:port）" .-> W
-    B3 -. "托盘命令桥 · 通知助手" .-> W
-    M5 -- "解析就绪行 → loadDshUrl" --> W
-    M2 -. "经 contentView 挂载" .-> W
-
-    class M1,M2,M3,M4,M5,M6,M7,M8,M9 main
-    class P bridge
-    class R1,R2 renderer
-    class W web
-    class B1,B2,B3 bundle
-```
+<p align="center"><img src="docs/architecture.svg" alt="dsh-desktop 架构" width="900"></p>
 
 ## 首次启动：背后发生了什么
 
 首次启动是一条编排好的流水线。如果没有配置 API Key，先弹模态对话框引导输入；然后写盘 desktop profile，以 `--profile desktop --port 0` 拉起捆绑的 CLI，监督器等待就绪行（`dsh web: http://127.0.0.1:<port>`）。一旦解析到，就把 Web UI 载入内容区，状态点变青。
 
-```mermaid
-flowchart TD
-    A["启动 launch"] --> B{"拿到单实例锁?"}
-    B -- "否（已有实例在运行）" --> C["本进程退出，已有实例唤出主窗口"]
-    B -- "是" --> D{"已配置 API Key?"}
-    D -- "否" --> E["引导对话框<br/>输入并保存 Key"]
-    E --> D
-    D -- "是" --> F["准备 desktop profile<br/>写盘 + 安装客户端插件"]
-    F --> G["spawn node dsh --profile desktop --port 0"]
-    G --> H{"解析就绪行?"}
-    H -- "dsh web: http://127.0.0.1:port" --> I["把 Web UI 载入内容区"]
-    I --> J["状态点：运行中 running"]
-    H -- "超时 / 就绪前退出" --> K["错误视图 + 重试按钮"]
-```
+1. 获取单实例锁 —— 若已有实例在运行，本进程直接退出，由已有实例唤出主窗口。
+2. 若尚未配置 API Key，先弹出引导对话框，输入并保存到 `<DSH_HOME>/.env`。
+3. 写盘 `desktop` profile，再以 `dsh --profile desktop --port 0` 拉起捆绑的 CLI。
+4. 等待就绪行（`dsh web: http://127.0.0.1:<port>`）。解析到后，Web UI 载入内容区，状态点变青；若超时，则显示带重试按钮的错误视图。
 
 ## 三步上手
 

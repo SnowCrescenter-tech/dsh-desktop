@@ -42,98 +42,16 @@ dsh-desktop wraps the DeepSeek Harness Web UI in a native Windows desktop app. T
 
 dsh-desktop is an Electron shell. The main process owns the window, tray, notifications, auto-launch and the runtime supervisor that starts and watches the bundled DeepSeek Harness CLI. A preload bridge exposes a small, frozen `window.dshDesktop` API to the renderer. The window's own web contents draw the title bar, and a sandboxed `WebContentsView` below it hosts the DeepSeek Harness Web UI, which runs on the `desktop` profile: `@deepseek-ai/dsh-base`, `@deepseek-ai/dsh-web-app`, and `@dsh-desktop/client`.
 
-```mermaid
-flowchart TD
-    classDef main fill:#10131A,stroke:#4D6BFE,stroke-width:2px,color:#E8EAED
-    classDef bridge fill:#EEF1FF,stroke:#4D6BFE,color:#1A1D21
-    classDef renderer fill:#F4F6F9,stroke:#9AA1AC,color:#1A1D21
-    classDef web fill:#FFFFFF,stroke:#12A5A1,stroke-width:2px,color:#1A1D21
-    classDef bundle fill:#FDECEC,stroke:#E5484D,color:#1A1D21
-
-    style MAIN fill:#10131A,stroke:#4D6BFE,color:#E8EAED
-    style BRIDGE fill:#EEF1FF,stroke:#4D6BFE,color:#1A1D21
-    style RENDERER fill:#F4F6F9,stroke:#9AA1AC,color:#1A1D21
-    style WEB fill:#FFFFFF,stroke:#12A5A1,color:#1A1D21
-    style PROFILE fill:#FDECEC,stroke:#E5484D,color:#1A1D21
-
-    subgraph MAIN["Electron main process"]
-        M1["index.ts composition root<br/>single-instance lock · second instance reuses the window<br/>on quit: kill the dsh process tree · dispose tray"]
-        M2["window.ts window controller<br/>frameless window · 36px drawn title bar<br/>DWM rounded corners (Win11) · WebContentsView content area"]
-        M3["tray.ts system tray<br/>open main window · start on boot · about · exit"]
-        M4["notifications.ts native notifications<br/>AppUserModelID gate · balloon fallback"]
-        M5["runtime/state-machine.ts runtime supervisor<br/>spawns dsh --profile desktop --port 0<br/>parses the ready line · 120s timeout · tree kill"]
-        M6["profile/bootstrap.ts desktop profile<br/>writes the profile · installs the client plugin"]
-        M7["onboarding.ts first-run onboarding<br/>validates the API key · saves it to DSH_HOME/.env"]
-        M8["autolaunch.ts start on boot<br/>HKCU Run registry key"]
-        M9["ipc.ts contract handlers<br/>autolaunch · native · web broadcast"]
-    end
-
-    subgraph BRIDGE["Preload bridge"]
-        P["preload/index.ts<br/>contextBridge exposes window.dshDesktop<br/>window · status · onboarding · autolaunch · native · web"]
-    end
-
-    subgraph RENDERER["Renderer"]
-        R1["titlebar drawn title bar<br/>whale glyph · status dot · minimize/maximize/close"]
-        R2["onboarding dialog<br/>420px modal · enter key · Enter to submit"]
-    end
-
-    subgraph WEB["WebContentsView (sandboxed, no preload)"]
-        W["DeepSeek Harness Web UI<br/>served by the desktop profile"]
-    end
-
-    subgraph PROFILE["desktop profile bundles (mount order)"]
-        B1["@deepseek-ai/dsh-base"]
-        B2["@deepseek-ai/dsh-web-app (serves the Web UI)"]
-        B3["@dsh-desktop/client<br/>tray command bridge · native notify helper"]
-    end
-
-    M1 --> M2
-    M1 --> M3
-    M1 --> M4
-    M1 --> M5
-    M1 --> M6
-    M1 --> M7
-    M1 --> M8
-    M1 --> M9
-    R1 <--> P
-    R2 <--> P
-    P -- "window:* contract" --> M2
-    P -- "onboarding:* contract" --> M7
-    P -- "autolaunch:* / native:* / web:* contract" --> M9
-    M6 -. "writes the profile · installs the plugin" .-> B1
-    M5 -- "spawns the dsh CLI · loads the desktop profile" --> B1
-    B1 --> B2
-    B2 --> B3
-    B2 -. "serves the Web UI (127.0.0.1:port)" .-> W
-    B3 -. "tray command bridge · notify helper" .-> W
-    M5 -- "parses the ready line → loadDshUrl" --> W
-    M2 -. "mounted via contentView" .-> W
-
-    class M1,M2,M3,M4,M5,M6,M7,M8,M9 main
-    class P bridge
-    class R1,R2 renderer
-    class W web
-    class B1,B2,B3 bundle
-```
+<p align="center"><img src="docs/architecture.svg" alt="dsh-desktop 架构" width="900"></p>
 
 ## First run: what happens under the hood
 
 The first launch is an orchestrated sequence. If no API key is configured, a modal dialog asks for one. The profile is written to disk, the bundled CLI is spawned with `--profile desktop --port 0`, and the supervisor waits for the ready line (`dsh web: http://127.0.0.1:<port>`). Once parsed, the Web UI is loaded into the content view and the status dot turns teal.
 
-```mermaid
-flowchart TD
-    A["launch"] --> B{"got the single-instance lock?"}
-    B -- "no (another instance is running)" --> C["exit; the existing instance shows its window"]
-    B -- "yes" --> D{"API key configured?"}
-    D -- "no" --> E["onboarding dialog<br/>enter and save the key"]
-    E --> D
-    D -- "yes" --> F["prepare the desktop profile<br/>write files · install the client plugin"]
-    F --> G["spawn node dsh --profile desktop --port 0"]
-    G --> H{"ready line parsed?"}
-    H -- "dsh web: http://127.0.0.1:port" --> I["load the Web UI into the content view"]
-    I --> J["status dot: running"]
-    H -- "timeout / exited before ready" --> K["error view with a retry button"]
-```
+1. Acquire the single-instance lock — a second launch just brings the existing window to the front.
+2. If no API key is configured yet, the onboarding dialog asks for one and saves it to `<DSH_HOME>/.env`.
+3. Write the `desktop` profile to disk, then spawn the bundled CLI: `dsh --profile desktop --port 0`.
+4. Wait for the ready line (`dsh web: http://127.0.0.1:<port>`). Once parsed, the Web UI loads into the content view and the status dot turns teal. If it times out, an error view with a retry button is shown.
 
 ## Quick start
 
