@@ -1,0 +1,8 @@
+{
+  // 主进程 (Electron main) 类型检查入口:Node 上下文,可使用 node: 与 electron API。
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["src/main/**/*.ts"]
+}

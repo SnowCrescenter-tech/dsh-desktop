@@ -1,0 +1,3 @@
+# 占位文件: 确保 resources/plugins 目录被 git 跟踪。
+# 构建时 (build.ps1 步骤 5) 会把 @dsh-desktop/client 的 npm pack 产物 (*.tgz) 放进来,
+# 供 src/main/profile/resolve.ts 的 resolvePluginTarballs 枚举 (回退安装路径)。

@@ -1,0 +1,9 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- dsh-desktop whale glyph - light theme, accent #4D6BFE, 24-unit master geometry -->
+  <g stroke="#4D6BFE" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17.9 12.2 C17.9 8.7, 15.6 6.3, 12 6.1 C9 5.9, 6.3 6.7, 4.7 8.4 C3.1 10, 3 12.6, 4.2 14.4 C5.5 16.6, 10.2 17.3, 14.1 15.7 C15.8 15, 17.1 13.8, 17.9 12.2 Z"/>
+    <path d="M17.9 12.2 C19.2 11.1, 20.3 10.1, 21 8.6"/>
+    <path d="M17.9 12.2 C19.2 13.4, 20.3 14.4, 21 15.9"/>
+    <circle cx="5.2" cy="10.9" r="0.95" fill="#4D6BFE" stroke="none"/>
+  </g>
+</svg>

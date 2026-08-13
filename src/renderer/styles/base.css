@@ -1,0 +1,94 @@
+/**
+ * dsh-desktop base styles — fonts (§2.5) + hairline-first elevation (§2.6).
+ *
+ * Order of imports matters: tokens.css (all custom properties) must load
+ * first; this file only consumes tokens and defines base element + shared
+ * elevation classes. Spec §1: 1px hairline > shadow; shadows are reserved
+ * for layers floating above the window.
+ */
+
+/* ------------------------------------------------------------------ */
+/* Base typography (spec §2.5 — system fonts, ClearType untouched)     */
+/* ------------------------------------------------------------------ */
+
+html,
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-body);
+  color: var(--text-primary);
+  background: var(--bg-window);
+  /* 不透明外壳 (spec §3.1/§6.5): 标题栏绝不做透明层 */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 对话框标题 (spec §2.5): 18px / 600, 行高 1.4 */
+.title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-title);
+}
+
+/* 次要/脚注 (spec §2.5): 12px / 400 */
+.caption {
+  font-family: var(--font-ui);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-body);
+}
+
+/* API Key 输入 (spec §2.5): mono 13px / 400 */
+.mono-input {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-mono);
+  font-weight: var(--font-weight-regular);
+}
+
+/* ------------------------------------------------------------------ */
+/* Elevation — hairline first (spec §2.6)                              */
+/* ------------------------------------------------------------------ */
+
+/*
+ * 层级用 1px 发丝线表达 (--hairline);阴影只用于"浮在窗口之上"的
+ * 模态/非模态弹层。卡片/按钮无阴影 — 悬停只做底色变化 (--bg-hover)。
+ */
+
+/* 浮层统一发丝边框 — 所有弹层都先有这 1px */
+.hairline {
+  border: 1px solid var(--hairline);
+}
+
+/* 对话框: 1px hairline + shadow-dialog (light: rgba(15,20,35,0.10) /
+   dark: rgba(0,0,0,0.45)) */
+.elevation-dialog {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-dialog);
+  box-shadow: var(--shadow-dialog);
+  background: var(--bg-surface);
+}
+
+/* 小浮层/菜单: 1px hairline + shadow-popover (0 4px 12px rgba(15,20,35,0.08)) */
+.elevation-popover {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-popover);
+  box-shadow: var(--shadow-popover);
+  background: var(--bg-surface);
+}
+
+/* ------------------------------------------------------------------ */
+/* Motion guard (spec §5): reduced motion ⇒ final state, 0ms           */
+/* ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

@@ -1,0 +1,18 @@
+{
+  // Node 侧工程配置:覆盖构建配置文件与测试文件 (均运行在 Node 环境)。
+  // 不含 src/main、src/preload —— 它们由 tsconfig.main.json / tsconfig.preload.json 单独检查。
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    // e2e boot-smoke 需要 import 构建产物 dist/main/index.js (纯 JS, 无声明文件);
+    // checkJs 默认 false, 只允许解析, 不检查 JS 内容。
+    "allowJs": true
+  },
+  "include": [
+    "electron.vite.config.ts",
+    "vitest.config.ts",
+    "vitest.e2e.config.ts",
+    "tests/**/*.ts",
+    "src/shared/**/*.ts"
+  ]
+}

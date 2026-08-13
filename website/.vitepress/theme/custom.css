@@ -1,0 +1,415 @@
+/* ============================================================
+   dsh-desktop docs — design tokens (from dsh-desktop-design-spec.md)
+   Minimal · Calm · Silky. Hairlines over shadows. No gradients,
+   no emojis, no decorative motion.
+   ============================================================ */
+
+:root {
+  /* light theme tokens */
+  --ds-accent: #4d6bfe;
+  --ds-accent-hover: #3a57f0;
+  --ds-accent-pressed: #2e48d9;
+  --ds-accent-subtle: #eef1ff;
+  --ds-accent-teal: #12a5a1;
+  --ds-error: #e5484d;
+  --ds-error-subtle: #fdecec;
+  --ds-success: #22a06b;
+  --ds-text-primary: #1a1d21;
+  --ds-text-secondary: #5f6672;
+  --ds-text-tertiary: #9aa1ac;
+
+  --ds-bg-window: #f4f6f9;
+  --ds-bg-surface: #ffffff;
+  --ds-bg-alt: #eceef4;
+  --ds-bg-hover: rgba(23, 31, 46, 0.06);
+  --ds-hairline: #e2e5ea;
+  --ds-line: rgba(23, 31, 46, 0.10);
+  --ds-line-strong: rgba(23, 31, 46, 0.18);
+
+  --ds-focus-ring: rgba(77, 107, 254, 0.35);
+  --ds-shadow-dialog: 0 8px 24px rgba(15, 20, 35, 0.10);
+  --ds-shadow-popover: 0 4px 12px rgba(15, 20, 35, 0.08);
+
+  --ds-font: 'Segoe UI Variable Text', 'Segoe UI', -apple-system, BlinkMacSystemFont,
+    'Microsoft YaHei UI', '微软雅黑', 'PingFang SC', sans-serif;
+  --ds-font-display: 'Segoe UI Variable Display', 'Segoe UI Variable Text', 'Segoe UI',
+    'Microsoft YaHei UI', '微软雅黑', sans-serif;
+  --ds-font-mono: 'Cascadia Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
+
+  --ds-duration: 140ms;
+  --ds-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html.dark {
+  /* dark theme tokens — 黑鲸墨色 */
+  --ds-accent: #6c86ff;
+  --ds-accent-hover: #7e95ff;
+  --ds-accent-pressed: #5b74f0;
+  --ds-accent-subtle: rgba(108, 134, 255, 0.14);
+  --ds-accent-teal: #3cc9be;
+  --ds-error: #f2555a;
+  --ds-error-subtle: rgba(242, 85, 90, 0.12);
+
+  --ds-text-primary: #e8eaed;
+  --ds-text-secondary: #9ba1ab;
+  --ds-text-tertiary: #5e6470;
+
+  --ds-bg-window: #10131a;
+  --ds-bg-surface: #191d26;
+  --ds-bg-alt: #0d1017;
+  --ds-bg-hover: rgba(255, 255, 255, 0.07);
+  --ds-hairline: rgba(255, 255, 255, 0.09);
+  --ds-line: rgba(255, 255, 255, 0.10);
+  --ds-line-strong: rgba(255, 255, 255, 0.18);
+
+  --ds-focus-ring: rgba(108, 134, 255, 0.50);
+  --ds-shadow-dialog: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --ds-shadow-popover: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* ------------------------------------------------------------
+   Map tokens onto VitePress theme variables (light + dark)
+   ------------------------------------------------------------ */
+:root {
+  --vp-c-brand-1: var(--ds-accent);
+  --vp-c-brand-2: var(--ds-accent-hover);
+  --vp-c-brand-3: var(--ds-accent-pressed);
+  --vp-c-brand-active: var(--ds-accent-hover);
+  --vp-c-brand-soft: var(--ds-accent-subtle);
+
+  --vp-c-bg: var(--ds-bg-window);
+  --vp-c-bg-alt: var(--ds-bg-alt);
+  --vp-c-bg-elv: var(--ds-bg-surface);
+  --vp-c-bg-soft: var(--ds-bg-surface);
+
+  --vp-c-divider: var(--ds-hairline);
+  --vp-c-divider-light: var(--ds-hairline);
+  --vp-c-gutter: var(--ds-hairline);
+
+  --vp-c-text-1: var(--ds-text-primary);
+  --vp-c-text-2: var(--ds-text-secondary);
+  --vp-c-text-3: var(--ds-text-tertiary);
+
+  --vp-c-green: var(--ds-accent-teal);
+  --vp-c-yellow: var(--ds-accent-teal);
+  --vp-c-red: var(--ds-error);
+
+  --vp-font-family-base: var(--ds-font);
+  --vp-font-family-mono: var(--ds-font-mono);
+
+  --vp-layout-max-width: 1440px;
+  --vp-content-width: 900px;
+  --vp-content-max-width: 1280px;
+  --vp-doc-max-width: 720px;
+  --vp-sidebar-width: 264px;
+
+  --vp-nav-bg-color: var(--ds-bg-window);
+  --vp-local-nav-bg-color: var(--ds-bg-window);
+  --vp-code-block-bg: var(--ds-bg-surface);
+  --vp-code-bg: var(--ds-accent-subtle);
+  --vp-code-border: var(--ds-hairline);
+  --vp-code-line-highlight-bg: var(--ds-bg-hover);
+}
+
+html.dark {
+  --vp-c-bg: var(--ds-bg-window);
+  --vp-c-bg-alt: var(--ds-bg-alt);
+  --vp-c-bg-elv: var(--ds-bg-surface);
+  --vp-c-bg-soft: var(--ds-bg-surface);
+  --vp-c-text-1: var(--ds-text-primary);
+  --vp-nav-bg-color: var(--ds-bg-window);
+  --vp-local-nav-bg-color: var(--ds-bg-window);
+}
+
+/* ------------------------------------------------------------
+   Base
+   ------------------------------------------------------------ */
+body {
+  font-family: var(--ds-font);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--ds-accent-subtle);
+  color: var(--vp-c-text-1);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------
+   Nav — solid, hairline-bordered, no glass
+   ------------------------------------------------------------ */
+.VPNavBar {
+  border-bottom: 1px solid var(--vp-c-divider);
+  backdrop-filter: none;
+}
+
+.VPNavBar:not(.has-sidebar) .content,
+.VPNavBar.has-sidebar .content {
+  backdrop-filter: none;
+  background: var(--vp-c-bg);
+}
+
+.VPNavBarTitle .title {
+  font-family: var(--ds-font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.VPNavBarMenuLink,
+.VPNavBarMenuGroup .button {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.VPNavBarMenuLink.active {
+  color: var(--vp-c-brand-1);
+}
+
+/* language switcher + appearance toggle */
+.VPNavBarTranslations .VPLangSwitch,
+.VPNavBarAppearance .VPAppearanceSwitch {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--vp-c-text-2);
+  transition: background-color 100ms ease-out, color 100ms ease-out;
+}
+
+.VPNavBarTranslations .VPLangSwitch:hover,
+.VPNavBarAppearance .VPAppearanceSwitch:hover {
+  background: var(--ds-bg-hover);
+  color: var(--vp-c-text-1);
+}
+
+.VPDropdown .VPDropdownPanel,
+.VPNavBarTranslations .VPDropdownPanel {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background: var(--vp-c-bg-elv);
+  box-shadow: var(--ds-shadow-popover);
+}
+
+.VPDropdown .VPLink.active {
+  color: var(--vp-c-brand-1);
+}
+
+/* ------------------------------------------------------------
+   Sidebar — hairline right border, solid surface
+   ------------------------------------------------------------ */
+.VPSidebar {
+  border-right: 1px solid var(--vp-c-divider);
+  backdrop-filter: none;
+}
+
+.VPSidebarItem.level-0 > .item .text {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-3);
+}
+
+.VPSidebarItem.level-1 .item {
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.VPSidebarItem.is-active > .item {
+  background: var(--ds-accent-subtle);
+  color: var(--vp-c-brand-1);
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------
+   Doc content — typography
+   ------------------------------------------------------------ */
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3,
+.vp-doc h4 {
+  font-family: var(--ds-font-display);
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+
+.vp-doc h1 {
+  font-size: 30px;
+  line-height: 1.35;
+}
+
+.vp-doc h2 {
+  font-size: 22px;
+  line-height: 1.4;
+  padding-top: 20px;
+  border-top: 1px solid var(--vp-c-divider);
+  margin-top: 40px;
+}
+
+.vp-doc h3 {
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.vp-doc p,
+.vp-doc li {
+  font-size: 14.5px;
+  line-height: 1.8;
+}
+
+.vp-doc a {
+  color: var(--vp-c-brand-1);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 120ms var(--ds-ease);
+}
+
+.vp-doc a:hover {
+  color: var(--vp-c-brand-2);
+}
+
+.vp-doc blockquote {
+  border-left: 2px solid var(--vp-c-brand-1);
+  border-radius: 0 8px 8px 0;
+  background: var(--ds-bg-surface);
+  color: var(--vp-c-text-2);
+  padding: 12px 20px;
+  margin: 16px 0;
+}
+
+.vp-doc hr {
+  border-color: var(--vp-c-divider);
+}
+
+/* inline code + code blocks — hairline, quiet */
+.vp-doc :not(pre) > code {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 6px;
+  background: var(--ds-bg-surface);
+  color: var(--vp-c-brand-1);
+  font-family: var(--ds-font-mono);
+  font-size: 13px;
+  padding: 0.15em 0.45em;
+}
+
+.vp-doc div[class*='language-'] {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.vp-doc div[class*='language-'] code {
+  font-family: var(--ds-font-mono);
+  font-size: 13px;
+}
+
+/* tables — hairline only */
+.vp-doc table {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--vp-c-divider);
+}
+
+.vp-doc th,
+.vp-doc td {
+  border-color: var(--vp-c-divider);
+}
+
+.vp-doc th {
+  background: var(--ds-bg-alt);
+  font-weight: 600;
+}
+
+/* custom containers — calm tints, hairline borders */
+.vp-doc .custom-block {
+  border-radius: 8px;
+  border: 1px solid var(--vp-c-divider);
+  background: var(--ds-bg-surface);
+  font-size: 14px;
+}
+
+.vp-doc .custom-block.tip {
+  border-color: var(--vp-c-brand-1);
+  background: var(--ds-accent-subtle);
+}
+
+.vp-doc .custom-block.warning {
+  border-color: var(--ds-accent-teal);
+  background: var(--ds-bg-surface);
+}
+
+.vp-doc .custom-block.danger {
+  border-color: var(--ds-error);
+  background: var(--ds-error-subtle);
+}
+
+/* ------------------------------------------------------------
+   Buttons
+   ------------------------------------------------------------ */
+.ds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 22px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-family: var(--ds-font);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 120ms var(--ds-ease), color 120ms var(--ds-ease),
+    transform 80ms var(--ds-ease), border-color 120ms var(--ds-ease);
+}
+
+.ds-btn--primary {
+  background: var(--ds-accent);
+  color: #ffffff;
+}
+
+.ds-btn--primary:hover {
+  background: var(--ds-accent-hover);
+}
+
+.ds-btn--primary:active {
+  background: var(--ds-accent-pressed);
+  transform: scale(0.97);
+}
+
+.ds-btn--ghost {
+  border-color: var(--ds-hairline);
+  background: transparent;
+  color: var(--vp-c-text-1);
+}
+
+.ds-btn--ghost:hover {
+  background: var(--ds-bg-hover);
+}
+
+/* ------------------------------------------------------------
+   Motion — calm, silky, transform/opacity only; reduced-motion kills all
+   ------------------------------------------------------------ */
+.VPContent,
+.vp-doc * {
+  transition-duration: var(--ds-duration) !important;
+  transition-timing-function: var(--ds-ease) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

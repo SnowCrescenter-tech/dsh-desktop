@@ -1,0 +1,9 @@
+{
+  // 预加载脚本 (preload) 类型检查入口:与主进程同属 Node 上下文,
+  // 但仅允许接触 electron (contextBridge / ipcRenderer) 与 node: 标准库。
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["src/preload/**/*.ts"]
+}

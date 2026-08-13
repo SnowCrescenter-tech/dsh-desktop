@@ -1,0 +1,97 @@
+# =============================================================================
+# release.yml —— dsh-desktop 发布工作流
+#
+# 触发:
+#   * push 带有 v* 前缀的 tag (如 v0.2.0)  —— 常规发布
+#   * workflow_dispatch (手动触发)          —— 手动补发/重发
+#
+# 产物与自动更新:
+#   * build.ps1 产出 NSIS 安装器 (release/*.exe)、electron-builder win zip
+#     与便携 zip (release/*.zip)。
+#   * 自动更新 (electron-updater) 要求 release 里同时有 NSIS 安装器 和
+#     electron-builder 生成的 latest.yml 元数据 —— 只有 electron-builder 自己的
+#     github publisher 会生成 latest.yml, 所以发布必须走它, 不能用
+#     softprops/action-gh-release 之类的通用工具 (它不会生成 latest.yml)。
+#   * build.ps1 里的 electron-builder 调用是 `--win nsis zip` (无 --publish),
+#     且失败不致命 (仅告警); 因此本工作流在打包后显式补一次
+#     `electron-builder --publish always` 完成发布 (成功则同时生成 latest.yml)。
+#
+# GH_TOKEN: electron-builder 的 github publisher 读取 GH_TOKEN 环境变量。
+# 在 GitHub Actions 中 GH_TOKEN 由作业级 env 从 secrets.GITHUB_TOKEN 自动映射,
+# 无需任何自定义 secret。
+# =============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+# 创建 Release + 上传产物需要写权限
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    env:
+      # electron-builder 的 github publisher 用 GH_TOKEN 认证 (自动映射自
+      # secrets.GITHUB_TOKEN, 无需手动配置 secret)。
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      # build.ps1: electron-vite 构建 + 运行时捆绑 + electron-builder
+      # (NSIS 安装器 + win zip) + 便携 zip。产物在 release/。
+      # 注意: build.ps1 里的 electron-builder 不带 --publish, 不会发布,
+      # 所以下面还有专门的 publish 步骤。
+      - name: Package (build.ps1)
+        shell: pwsh
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # 发布到 GitHub Releases (electron-builder 自带 github publisher):
+      #   * 重新构建 nsis + zip 并把 NSIS 安装器上传到 release
+      #   * 生成并上传 latest.yml (+ latest.yml.blockmap) —— electron-updater
+      #     自动更新依赖的元数据, 只有这一步会产生它
+      #   * 要求 tag 与 package.json 的 version 一致 (v<version>)
+      # --publish always: 无论 release 是否已存在都发布 (tag 触发时即为当前版本)
+      - name: Publish to GitHub Releases (electron-builder)
+        shell: pwsh
+        run: |
+          npx electron-builder --publish always --win
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # 构建产物 (安装器 + 各类 zip) 另存为 Actions 构建产物, 便于归档/人工下载
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-desktop-release
+          path: |
+            release/*.exe
+            release/*.zip
+          if-no-files-found: error

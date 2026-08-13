@@ -1,0 +1,331 @@
+/**
+ * 首次运行引导对话框样式 (设计规范 §4 / §5)。
+ *
+ * 只消费 tokens.css 的自定义属性, 不出现任何魔法值:
+ *   - 固定 420px 宽 × 372px 高的子窗口, 内容绝不缩放 / 动画宽度;
+ *   - 状态槽 (hint / error chip / spinner) 固定 28px 高, 状态切换零位移;
+ *   - 入场 fade+scale 140ms / 退场 100ms (--duration-dialog-*),
+ *     spinner 800ms 是唯一允许的循环动画; prefers-reduced-motion 由
+ *     base.css 统一归零。
+ */
+@import '../../styles/tokens.css';
+@import '../../styles/base.css';
+
+/* ------------------------------------------------------------------ */
+/* 对话框外壳 — 固定尺寸, 无宽度动画                                    */
+/* ------------------------------------------------------------------ */
+
+html,
+body {
+  height: 100%;
+  overflow: hidden; /* 固定内容窗口, 不允许出现滚动条 */
+}
+
+.dialog {
+  box-sizing: border-box;
+  height: 100%;
+  padding: var(--space-24);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  /* 入场: fade 0→1 + scale 0.98→1.0, 140ms (§5) */
+  animation: dialog-in var(--duration-dialog-in) var(--easing-standard) both;
+}
+
+/* 退场 (保存成功 / 稍后再说 / ESC): 反向 100ms, 结束后由主进程关闭窗口 */
+.dialog.is-out {
+  animation: dialog-out var(--duration-dialog-out) var(--easing-standard) both;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dialog-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 鲸鱼图标底衬 (40px 见方, accent-subtle, radius 10px)                 */
+/* ------------------------------------------------------------------ */
+
+.chip {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-subtle);
+  border-radius: var(--radius-chip);
+}
+
+/* 线稿内硬编码的品牌蓝已由 TS 替换为 currentColor, 随主题令牌走 */
+.chip svg {
+  width: 24px;
+  height: 24px;
+  display: block;
+  color: var(--accent);
+}
+
+/* ------------------------------------------------------------------ */
+/* 文字层级 (spec §2.5)                                                */
+/* ------------------------------------------------------------------ */
+
+.title {
+  margin: var(--space-16) 0 0;
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-title);
+  color: var(--text-primary);
+}
+
+.desc {
+  margin: var(--space-8) 0 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-body);
+  color: var(--text-secondary);
+}
+
+.label {
+  margin: var(--space-24) 0 0;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-body);
+  color: var(--text-primary);
+}
+
+/* ------------------------------------------------------------------ */
+/* API Key 输入区 — 40px 高, mono 13px, 右侧眼睛切换                    */
+/* ------------------------------------------------------------------ */
+
+.input-shell {
+  position: relative;
+  margin-top: var(--space-8);
+}
+
+.key-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 40px;
+  padding: 0 40px 0 12px;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-mono);
+  font-weight: var(--font-weight-regular);
+  line-height: 40px;
+  color: var(--text-primary);
+  caret-color: var(--accent);
+  background: var(--bg-surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-control);
+  outline: none;
+  /* 输入框允许文本选择 / 全选复制 (base.css 的 user-select:none 在此解除) */
+  -webkit-user-select: text;
+  user-select: text;
+  transition:
+    border-color var(--duration-hover) var(--easing-out),
+    box-shadow var(--duration-hover) var(--easing-out);
+}
+
+.key-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.key-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+/* 错误态: error 边框 (spec §4); 聚焦时由 JS 清除错误, 不存在
+   "error + focus" 共存时刻, 焦点环保持 accent */
+.is-error .key-input {
+  border-color: var(--error);
+}
+
+.key-input:disabled {
+  color: var(--text-tertiary);
+  border-color: var(--hairline);
+}
+
+.eye-toggle {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-hover) var(--easing-out),
+    color var(--duration-hover) var(--easing-out);
+}
+
+.eye-toggle:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.eye-toggle:disabled {
+  cursor: default;
+}
+
+.eye-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+/* ------------------------------------------------------------------ */
+/* 状态槽 — 固定 28px 高, hint / error chip / spinner 原地切换          */
+/* ------------------------------------------------------------------ */
+
+.status {
+  margin-top: var(--space-8);
+  height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-body);
+  color: var(--text-tertiary);
+}
+
+.error-chip {
+  padding: 3px 10px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-body);
+  color: var(--error);
+  background: var(--error-subtle);
+  border-radius: var(--radius-pill);
+}
+
+/* 验证 spinner: 14px, 800ms/圈, 唯一允许的循环动画 (spec §5) */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--hairline);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spinner-spin var(--duration-spinner) linear infinite;
+}
+
+@keyframes spinner-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 操作区 — 稍后再说 / 开始使用                                         */
+/* ------------------------------------------------------------------ */
+
+.actions {
+  margin-top: var(--space-16);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn {
+  height: 32px;
+  padding: 0 16px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition: background-color var(--duration-hover) var(--easing-out);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.btn:disabled {
+  cursor: default;
+}
+
+.btn-secondary {
+  color: var(--text-primary);
+  background: transparent;
+  border: 1px solid var(--hairline);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.btn-secondary:disabled {
+  color: var(--text-tertiary);
+}
+
+.btn-primary {
+  color: #ffffff;
+  background: var(--accent);
+  border: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-primary:active:not(:disabled) {
+  background: var(--accent-pressed);
+  /* 主按钮按下 scale(0.97), 80ms (spec §5) */
+  transform: scale(0.97);
+  transition:
+    background-color var(--duration-hover) var(--easing-out),
+    transform var(--duration-press) var(--easing-out);
+}
+
+.btn-primary:disabled {
+  color: var(--text-tertiary);
+  background: transparent;
+  border: 1px solid var(--hairline);
+}
+
+/* ------------------------------------------------------------------ */
+/* 信任行 — 锁形 + "Key 仅保存在本机" (spec §4; 禁用 emoji, 用锁字形)    */
+/* ------------------------------------------------------------------ */
+
+.trust {
+  margin-top: var(--space-16);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-body);
+  color: var(--text-tertiary);
+}
+
+.trust-lock {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}

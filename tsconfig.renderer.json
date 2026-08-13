@@ -1,0 +1,14 @@
+{
+  // 渲染进程 (renderer) 类型检查入口:浏览器上下文,注入 DOM lib 与 vite/client 类型
+  // (为 import.meta.env 等 Vite 注入提供类型)。
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"]
+  },
+  "include": [
+    "src/renderer/**/*",
+    // 渲染层访问 window.dshDesktop 的全局类型 (preload 桥接契约, 见文件头注释)
+    "src/preload/index.d.ts"
+  ]
+}

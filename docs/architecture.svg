@@ -1,0 +1,106 @@
+<svg width="940" height="638" viewBox="0 0 940 638" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- dsh-desktop architecture - minimal vertical stack, DeepSeek design language
+       palette: paper #F4F6F9 / surface #FFFFFF / hairline #E2E5EA / ink #1A1D21 / tertiary #9AA1AC / accent #4D6BFE -->
+  <defs>
+    <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0F1423" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+
+  <!-- canvas -->
+  <rect x="0.5" y="0.5" width="939" height="637" rx="14" fill="#F4F6F9" stroke="#E2E5EA" filter="url(#card-shadow)"/>
+
+  <g font-family="'Segoe UI Variable Text','Segoe UI','Microsoft YaHei UI','Microsoft YaHei',sans-serif">
+
+    <!-- ===================== layer 1 : Electron main process (44, 226) ===================== -->
+    <rect x="44" y="44" width="852" height="226" rx="12" fill="#FFFFFF" stroke="#E2E5EA"/>
+    <!-- label chip -->
+    <rect x="44" y="132" width="136" height="32" rx="8" fill="#4D6BFE"/>
+    <text x="112" y="154" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">Electron 主进程</text>
+    <text x="44" y="179" font-size="10" fill="#9AA1AC">Main process</text>
+    <!-- item chips: 2 cols x 4 rows -->
+    <g font-size="12.5" font-weight="500" fill="#1A1D21">
+      <text x="206" y="84">无边框窗口 · 自绘标题栏</text>
+      <text x="564" y="84">系统托盘</text>
+      <text x="206" y="136">原生通知</text>
+      <text x="564" y="136">运行时监督器 · 启动 dsh</text>
+      <text x="206" y="188">desktop profile 引导</text>
+      <text x="564" y="188">首启 Key 引导</text>
+      <text x="206" y="240">开机自启</text>
+      <text x="564" y="240">单实例锁</text>
+    </g>
+    <g font-size="10" fill="#9AA1AC">
+      <text x="206" y="98">Frameless window · drawn title bar</text>
+      <text x="564" y="98">System tray</text>
+      <text x="206" y="150">Native notifications</text>
+      <text x="564" y="150">Spawns dsh CLI · ready line · timeout</text>
+      <text x="206" y="202">Writes profile · installs client plugin</text>
+      <text x="564" y="202">First-run API key onboarding</text>
+      <text x="206" y="254">Auto-launch at sign-in</text>
+      <text x="564" y="254">Single-instance lock</text>
+    </g>
+    <g fill="none" stroke="#E2E5EA">
+      <rect x="192" y="66" width="346" height="42" rx="8"/>
+      <rect x="550" y="66" width="346" height="42" rx="8"/>
+      <rect x="192" y="118" width="346" height="42" rx="8"/>
+      <rect x="550" y="118" width="346" height="42" rx="8"/>
+      <rect x="192" y="170" width="346" height="42" rx="8"/>
+      <rect x="550" y="170" width="346" height="42" rx="8"/>
+      <rect x="192" y="222" width="346" height="42" rx="8"/>
+      <rect x="550" y="222" width="346" height="42" rx="8"/>
+    </g>
+
+    <!-- ===================== layer 2 : preload bridge (286, 68) ===================== -->
+    <rect x="44" y="286" width="852" height="68" rx="12" fill="#FFFFFF" stroke="#E2E5EA"/>
+    <rect x="44" y="296" width="136" height="32" rx="8" fill="#4D6BFE"/>
+    <text x="112" y="318" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">Preload 桥</text>
+    <text x="44" y="343" font-size="10" fill="#9AA1AC">Preload bridge</text>
+    <rect x="192" y="299" width="704" height="42" rx="8" fill="#F4F6F9" stroke="#E2E5EA"/>
+    <text x="206" y="318" font-size="12.5" font-weight="500" fill="#1A1D21">window.dshDesktop · contextBridge · 冻结 · 白名单通道</text>
+    <text x="206" y="332" font-size="10" fill="#9AA1AC">contextBridge · frozen API · allowlisted IPC channels</text>
+
+    <!-- ===================== layer 3 : renderer (370, 68) ===================== -->
+    <rect x="44" y="370" width="852" height="68" rx="12" fill="#FFFFFF" stroke="#E2E5EA"/>
+    <rect x="44" y="380" width="136" height="32" rx="8" fill="#4D6BFE"/>
+    <text x="112" y="402" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">渲染层</text>
+    <text x="44" y="427" font-size="10" fill="#9AA1AC">Renderer</text>
+    <g fill="none" stroke="#E2E5EA">
+      <rect x="192" y="378" width="346" height="42" rx="8"/>
+      <rect x="550" y="378" width="346" height="42" rx="8"/>
+    </g>
+    <text x="206" y="396" font-size="12.5" font-weight="500" fill="#1A1D21">自绘标题栏 · 鲸鱼图标 · 状态点 · 窗口控制</text>
+    <text x="206" y="410" font-size="10" fill="#9AA1AC">Drawn title bar · whale glyph · status dot · controls</text>
+    <text x="564" y="396" font-size="12.5" font-weight="500" fill="#1A1D21">首启引导对话框 · 420px</text>
+    <text x="564" y="410" font-size="10" fill="#9AA1AC">First-run onboarding dialog · 420px modal</text>
+
+    <!-- ===================== layer 4 : WebContentsView (454, 68) ===================== -->
+    <rect x="44" y="454" width="852" height="68" rx="12" fill="#FFFFFF" stroke="#E2E5EA"/>
+    <rect x="44" y="464" width="136" height="32" rx="8" fill="#4D6BFE"/>
+    <text x="112" y="486" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">WebContentsView</text>
+    <text x="44" y="511" font-size="10" fill="#9AA1AC">Sandboxed view</text>
+    <rect x="192" y="466" width="704" height="42" rx="8" fill="#F4F6F9" stroke="#E2E5EA"/>
+    <text x="206" y="485" font-size="12.5" font-weight="500" fill="#1A1D21">DeepSeek Harness Web UI · 沙箱</text>
+    <text x="206" y="499" font-size="10" fill="#9AA1AC">Sandboxed · no preload · served by the desktop profile</text>
+
+    <!-- ===================== layer 5 : bundle order (538, 56) ===================== -->
+    <rect x="44" y="538" width="852" height="56" rx="12" fill="#FFFFFF" stroke="#E2E5EA"/>
+    <rect x="44" y="542" width="136" height="32" rx="8" fill="#4D6BFE"/>
+    <text x="112" y="564" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">装载顺序</text>
+    <text x="44" y="589" font-size="10" fill="#9AA1AC">desktop profile · bundle order</text>
+    <g fill="none" stroke="#E2E5EA">
+      <rect x="192" y="550" width="208" height="32" rx="8"/>
+      <rect x="428" y="550" width="208" height="32" rx="8"/>
+      <rect x="664" y="550" width="208" height="32" rx="8"/>
+    </g>
+    <g font-size="12" font-weight="500" fill="#1A1D21">
+      <text x="296" y="571" text-anchor="middle">@deepseek-ai/dsh-base</text>
+      <text x="532" y="571" text-anchor="middle">@deepseek-ai/dsh-web-app</text>
+      <text x="768" y="571" text-anchor="middle">@dsh-desktop/client</text>
+    </g>
+    <g font-size="14" fill="#9AA1AC">
+      <text x="414" y="571" text-anchor="middle">→</text>
+      <text x="650" y="571" text-anchor="middle">→</text>
+    </g>
+
+  </g>
+</svg>
