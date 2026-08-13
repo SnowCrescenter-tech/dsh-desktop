@@ -28,6 +28,23 @@ vi.mock('electron', async () => {
   return mock;
 });
 
+// electron-updater 整模块 mock: 真实 NsisUpdater 构造需要 electron app 的
+// getVersion/isPackaged 等运行时能力, 无头 e2e 不构造真实 updater。组合根对该
+// 实例只做属性写入 (logger/autoDownload) 与事件订阅, plain object 足够;
+// 便携分支 (无 app-update.yml) 下 check() 不调用 checkForUpdates, 无需行为。
+vi.mock('electron-updater', () => ({
+  autoUpdater: {
+    autoDownload: false,
+    autoInstallOnAppQuit: true,
+    logger: null,
+    on(_event: string, _listener: unknown): void {},
+    checkForUpdates(): Promise<null> {
+      return Promise.resolve(null);
+    },
+    quitAndInstall(): void {},
+  },
+}));
+
 /** 构建产物绝对路径 (仅用于存在性检查与报错提示) */
 const BUNDLE_ABS_PATH = join(import.meta.dirname, '..', '..', 'dist', 'main', 'index.js');
 

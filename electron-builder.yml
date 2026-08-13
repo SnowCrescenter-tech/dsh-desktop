@@ -19,6 +19,14 @@
 appId: com.dsh.desktop
 productName: dsh-desktop
 
+# 自动更新发布源 (T18): electron-updater 在运行时读取。electron-builder 会把
+# 该配置写成 resources/app-update.yml, 且只为 nsis 目标生成 (便携 zip 没有,
+# 更新逻辑据此区分安装版/便携版, 见 src/main/update.ts)。
+publish:
+  provider: github
+  owner: SnowCrescenter-tech
+  repo: dsh-desktop
+
 directories:
   output: release
   # 构建资源目录 (installer.nsh 等, 由 build.ps1 生成; 不会被打进应用)

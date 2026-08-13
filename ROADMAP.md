@@ -15,6 +15,7 @@
 
 - [ ] T16 e2e 冒烟测试
 - [ ] T17 打包（便携 zip + NSIS 安装器）
+- [x] T18 自动更新（electron-updater + GitHub Releases 发布：NSIS 安装版后台自动下载、就绪后"重启并更新"；便携版引导到 Releases 页）
 - [ ] README 美化（双语 + 徽章 + 架构图）
 - [ ] Wave 5：docs 同步 + tag `v0.2.0` + GitHub Release
 

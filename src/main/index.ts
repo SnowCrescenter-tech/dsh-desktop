@@ -10,8 +10,9 @@
  *   4. before-quit: 停止 dsh 运行时 (killDsh 树杀)、销毁托盘、解除窗口 IPC;
  *   5. window-all-closed 不退出 —— 托盘常驻, 真正退出只能走托盘"退出"。
  */
-import { app } from 'electron';
+import { app, shell } from 'electron';
 import { join } from 'node:path';
+import { autoUpdater } from 'electron-updater';
 
 import { statusChannels, webChannels } from '../shared/contract.js';
 import type { ServiceStatus, WebCommand } from '../shared/contract.js';
@@ -27,6 +28,8 @@ import { createOnboardingWindow, registerOnboardingIpc } from './onboarding.js';
 import { resolveBinJs, resolveDshHome, resolvePluginTarballs } from './profile/resolve.js';
 import { createTray } from './tray.js';
 import type { TrayController } from './tray.js';
+import { GITHUB_RELEASES_URL, createUpdateLogger, createUpdater } from './update.js';
+import type { UpdaterController } from './update.js';
 import {
   APP_USER_MODEL_ID,
   configureAppIdentity,
@@ -37,6 +40,9 @@ import type { DshWindowController } from './window.js';
 
 // 必须发生在 app ready 之前 (Chromium 启动参数)
 enablePerMonitorV2(app);
+
+/** 启动后延迟静默自检更新的间隔 (ms) —— 避开启动高峰, 避免与首启引导抢资源 */
+const STARTUP_UPDATE_CHECK_DELAY_MS = 4_000;
 
 // 单实例锁: 拿不到锁说明已有实例在运行, 本进程直接退出 (exit 0)
 const gotTheLock = app.requestSingleInstanceLock();
@@ -52,6 +58,8 @@ function bootstrap(): void {
   let tray: TrayController | null = null;
   let firstRun: FirstRun | null = null;
   let disposeIpc: (() => void) | null = null;
+  // 启动自检的延迟定时器 (退出前清除, 避免 app 退出后仍触发检查)
+  let startupUpdateTimer: NodeJS.Timeout | null = null;
 
   // 第二实例尝试启动: 显示并聚焦首实例主窗口
   app.on('second-instance', () => {
@@ -92,6 +100,24 @@ function bootstrap(): void {
     };
     disposeIpc = registerIpcHandlers(ipcDeps);
 
+    // 自动更新 (T18): 安装版 (NSIS, 有 app-update.yml) 后台自动下载,
+    // 下载就绪后弹"重启即更新"通知; 便携版 / 离线一律静默降级, 绝不崩溃。
+    const updater: UpdaterController = createUpdater({
+      autoUpdater,
+      notifier,
+      shell,
+      logger: createUpdateLogger(),
+      releasesUrl: GITHUB_RELEASES_URL,
+    });
+    // 更新阶段变化 → 刷新托盘菜单/提示 (开机自启复选与更新就绪同时重建)
+    updater.onPhaseChange(() => {
+      void tray?.syncAutolaunch();
+    });
+    // 启动 4s 后静默自检一次: 不弹窗、不打开页面, 仅后台检查/下载
+    startupUpdateTimer = setTimeout(() => {
+      void updater.check({ silent: true });
+    }, STARTUP_UPDATE_CHECK_DELAY_MS);
+
     // 服务状态推送: main→renderer, 由 first-run 在状态变化时驱动
     const emitStatus = (status: ServiceStatus): void => {
       if (!win.isDestroyed()) {
@@ -99,12 +125,17 @@ function bootstrap(): void {
       }
     };
 
-    // 托盘: 显示窗口 / 广播 / 开机自启同步
+    // 托盘: 显示窗口 / 广播 / 开机自启同步 / 更新检查联动
     tray = createTray({
       showWindow: () => controller?.show(),
       broadcast: broadcastToWeb,
       getAutolaunchEnabled: () => autolaunch.isEnabled(),
       setAutolaunchEnabled: (enabled: boolean) => autolaunch.setEnabled(enabled),
+      checkForUpdates: () => {
+        void updater.check();
+      },
+      hasReadyUpdate: () => updater.getPhase().phase === 'ready',
+      quitAndInstall: () => updater.quitAndInstall(),
     });
 
     // 首次运行编排: 引导 → profile → spawn → 监督 → 状态上报 / 错误视图
@@ -153,6 +184,10 @@ function bootstrap(): void {
 
   // 真正退出前: 停止 dsh 运行时 (树杀) + 销毁托盘 + 解除窗口/其余 IPC
   app.on('before-quit', () => {
+    if (startupUpdateTimer !== null) {
+      clearTimeout(startupUpdateTimer);
+      startupUpdateTimer = null;
+    }
     if (firstRun !== null) {
       void firstRun.stop();
     }

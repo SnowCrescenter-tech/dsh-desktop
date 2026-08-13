@@ -37,6 +37,7 @@ dsh-desktop wraps the DeepSeek Harness Web UI in a native Windows desktop app. T
 - `↻` **Start on boot**: optionally launch in the background after sign-in, backed by a Windows registry Run key.
 - `▤` **First-run onboarding**: the first launch shows a guided dialog that asks for your DeepSeek API key. The key is saved only on this machine, in `<DSH_HOME>/.env`.
 - `⇄` **Port 0 auto-assign**: the service asks Windows for a free port on every launch (`--port 0`), so it never collides with port 3080 or any other program.
+- `↑` **Auto-update**: the installed (NSIS) build silently checks for a new version shortly after launch and downloads it in the background; when it is ready, a native notification appears and the tray menu shows "Restart and update" — pick it to restart and apply. The portable zip has no installer, so its "Check for updates" opens the GitHub Releases page instead.
 
 ## How it works
 
@@ -98,6 +99,10 @@ The service listens on a system-assigned port (port 0), so Windows picks a free 
 **Why is the app still running after I close the window?**
 
 Closing the window minimizes to the tray by default, and the app keeps running in the background. Pick "Exit" from the tray menu to fully quit.
+
+**How do I update to a new version?**
+
+The installed version checks for updates automatically in the background after launch. When a new version is ready, a notification appears — choose "Restart and update" from the tray menu (or just restart the app) and the update applies on quit. You can also use the "Check for updates" tray menu item at any time. The portable zip has no self-installer: "Check for updates" opens the GitHub Releases page, where you download the latest zip and replace the old folder.
 
 **Do I have to pay?**
 
