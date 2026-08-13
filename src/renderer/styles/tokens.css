@@ -1,0 +1,184 @@
+/**
+ * dsh-desktop design tokens — dsh-desktop-design-spec.md §2 (authoritative).
+ *
+ * Theme model:
+ *   - Default: follows the OS via `prefers-color-scheme`.
+ *   - Runtime override: add `.theme-dark` / `.theme-light` to the root
+ *     element (html) to pin a theme regardless of the OS setting.
+ *   - Changing theme = re-resolving these custom properties; the same DOM
+ *     updates live without a window restart (spec §2.2).
+ *
+ * Usage rules (spec §1): no gradients, no heavy shadows — 1px hairline
+ * first; `accent` only where actionable/running; motion is transform/opacity
+ * only.
+ */
+
+/* ================================================================== */
+/* Theme-independent tokens                                           */
+/* ================================================================== */
+
+:root {
+  /* ---- 2.3 Corner radius ---- */
+  --radius-window: 8px; /* 窗口外圆角 — DWM 原生处理 (DWMWCP_ROUND) */
+  --radius-dialog: 12px; /* 引导对话框、设置弹层 */
+  --radius-popover: 8px; /* 小浮层、菜单 */
+  --radius-control: 6px; /* 按钮、输入框 */
+  --radius-chip: 10px; /* 图标底衬 (40px 见方) */
+  --radius-pill: 999px; /* 状态徽章、提示 chip */
+
+  /* ---- 2.4 Spacing (4px base): 4 / 8 / 12 / 16 / 24 / 32 ---- */
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px; /* 对话框内边距 */
+  --space-32: 32px; /* 托盘菜单项高 */
+
+  /* ---- 2.5 Typography (system fonts, zero download) ---- */
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI",
+    "微软雅黑", sans-serif;
+  --font-display: "Segoe UI Variable Display", "Microsoft YaHei UI",
+    "微软雅黑", sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, monospace;
+
+  /* 字重只允许 400 / 500 / 600 三档 (spec §2.5) */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  --font-size-xs: 12px; /* 次要/脚注; 标题栏应用名 12px/500; 标签 12px/500 */
+  --font-size-mono: 13px; /* API Key 输入 (mono) */
+  --font-size-sm: 14px; /* 正文 14px/400; 按钮 14px/500 */
+  --font-size-lg: 18px; /* 对话框标题 18px/600 */
+
+  --line-height-body: 1.6; /* CJK 正文 */
+  --line-height-title: 1.4; /* 对话框标题 */
+
+  /* ---- 2.6 Elevation — 阴影只用于浮在窗口之上的弹层 ---- */
+  --shadow-popover: 0 4px 12px rgba(15, 20, 35, 0.08);
+
+  /* ---- 5 Motion (transform/opacity only) ---- */
+  --duration-dialog-in: 140ms; /* fade 0→1 + scale 0.98→1.0 */
+  --duration-dialog-out: 100ms; /* 退场, 反向 */
+  --duration-scrim: 120ms; /* 遮罩, 仅 opacity, 线性 */
+  --duration-hover: 100ms; /* 控制钮/按钮悬停背景色过渡 */
+  --duration-press: 80ms; /* 主按钮按下 scale(0.97) */
+  --duration-status: 150ms; /* 状态点颜色切换, 不脉冲 */
+  --duration-spinner: 800ms; /* 验证 spinner, 唯一允许的循环动画 */
+
+  --easing-standard: cubic-bezier(0.16, 1, 0.3, 1); /* 对话框入场/退场 */
+  --easing-out: ease-out; /* 悬停过渡 */
+  --easing-linear: linear; /* 遮罩 */
+
+  /* ---- Layout anchors (spec §2.4 / §3) ---- */
+  --window-min-width: 800px;
+  --window-min-height: 560px;
+  --window-default-width: 1080px;
+  --window-default-height: 720px;
+  --titlebar-height: 36px;
+  --titlebar-padding-left: 8px; /* 右 0 — 控制钮自带 46px 宽度 */
+  --control-button-width: 46px;
+  --control-button-height: 36px;
+  --status-dot-size: 6px;
+}
+
+/* ================================================================== */
+/* 2.1 Colors — Light theme (default, cold paper white)               */
+/* ================================================================== */
+
+:root,
+.theme-light {
+  color-scheme: light;
+
+  --bg-window: #F4F6F9; /* 窗口外壳底色 (冷调纸白) */
+  --bg-surface: #FFFFFF; /* 对话框、菜单、弹层表面 */
+  --bg-hover: rgba(23, 31, 46, 0.06); /* 悬停底色 */
+
+  --text-primary: #1A1D21; /* 标题、正文 */
+  --text-secondary: #5F6672; /* 描述、次要信息 */
+  --text-tertiary: #9AA1AC; /* 脚注、禁用、未激活窗口 */
+  --hairline: #E2E5EA; /* 所有 1px 边框/分隔线 */
+
+  --accent: #4D6BFE; /* DeepSeek 品牌蓝 — 主按钮、焦点、运行态 */
+  --accent-hover: #3A57F0; /* 主按钮悬停 */
+  --accent-pressed: #2E48D9; /* 主按钮按下 */
+  --accent-subtle: #EEF1FF; /* 图标底衬、选中态底色 */
+  --accent-teal: #12A5A1; /* 次级品牌色 — 服务在线状态点 */
+
+  --error: #E5484D; /* 错误文案、错误边框 */
+  --error-subtle: #FDECEC; /* 错误提示底色 */
+  --success: #22A06B; /* 校验通过 (极少量使用) */
+
+  --focus-ring: rgba(77, 107, 254, 0.35); /* 输入框焦点环 (2px) */
+  --close-hover: #E81123; /* 关闭钮悬停底 (Windows 惯例, §3.1) */
+
+  /* 2.6 Elevation — dialog shadow (light) */
+  --shadow-dialog: 0 8px 24px rgba(15, 20, 35, 0.1);
+}
+
+/* ================================================================== */
+/* 2.2 Colors — Dark theme (黑鲸 ink blue, not pure black)             */
+/* ================================================================== */
+
+.theme-dark {
+  color-scheme: dark;
+
+  --bg-window: #10131A; /* 墨色外壳 (带蓝调,非纯黑) */
+  --bg-surface: #191D26; /* 对话框、菜单表面 */
+  --bg-hover: rgba(255, 255, 255, 0.07); /* 悬停底色 */
+
+  --text-primary: #E8EAED; /* 标题、正文 */
+  --text-secondary: #9BA1AB; /* 描述、次要信息 */
+  --text-tertiary: #5E6470; /* 脚注、禁用、未激活窗口 */
+  --hairline: rgba(255, 255, 255, 0.09); /* 1px 边框/分隔线 */
+
+  --accent: #6C86FF; /* 品牌蓝 (深色下提亮一档) */
+  --accent-hover: #7E95FF; /* 主按钮悬停 */
+  --accent-pressed: #5B74F0; /* 主按钮按下 */
+  --accent-subtle: rgba(108, 134, 255, 0.14); /* 图标底衬 */
+  --accent-teal: #3CC9BE; /* 服务在线状态点 */
+
+  --error: #F2555A; /* 错误文案、错误边框 */
+  --error-subtle: rgba(242, 85, 90, 0.12); /* 错误提示底色 */
+
+  --focus-ring: rgba(108, 134, 255, 0.50); /* 输入框焦点环 */
+  --close-hover: #D13438; /* 关闭钮悬停底 (Windows 惯例, §3.1) */
+
+  /* 2.6 Elevation — dialog shadow (dark) */
+  --shadow-dialog: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* ================================================================== */
+/* System theme following (spec §2.2): live switch, no restart        */
+/* ================================================================== */
+
+@media (prefers-color-scheme: dark) {
+  /* Same token set as `.theme-dark`; the `.theme-light` class on the root
+     element intentionally defeats this so the override always wins. */
+  :root:not(.theme-light) {
+    color-scheme: dark;
+
+    --bg-window: #10131A;
+    --bg-surface: #191D26;
+    --bg-hover: rgba(255, 255, 255, 0.07);
+
+    --text-primary: #E8EAED;
+    --text-secondary: #9BA1AB;
+    --text-tertiary: #5E6470;
+    --hairline: rgba(255, 255, 255, 0.09);
+
+    --accent: #6C86FF;
+    --accent-hover: #7E95FF;
+    --accent-pressed: #5B74F0;
+    --accent-subtle: rgba(108, 134, 255, 0.14);
+    --accent-teal: #3CC9BE;
+
+    --error: #F2555A;
+    --error-subtle: rgba(242, 85, 90, 0.12);
+
+    --focus-ring: rgba(108, 134, 255, 0.50);
+    --close-hover: #D13438;
+
+    --shadow-dialog: 0 8px 24px rgba(0, 0, 0, 0.45);
+  }
+}

@@ -3,3 +3,18 @@ dist/
 out/
 release/
 .cache/
+resources/plugins/*.tgz
+
+# 编辑器 / 系统杂项
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# 本地环境变量
+.env
+.env.local
+
+# 覆盖率产物
+coverage/
+

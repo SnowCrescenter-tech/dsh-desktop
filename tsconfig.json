@@ -1,0 +1,16 @@
+{
+  // 根 IDE 配置:仅供编辑器使用,覆盖全部源码与工具链文件。
+  // 实际类型检查由 tsconfig.{node,main,preload,renderer}.json 分工完成 (见 npm run typecheck)。
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node", "vite/client"]
+  },
+  "include": [
+    "src/**/*",
+    "electron.vite.config.ts",
+    "vitest.config.ts",
+    "vitest.e2e.config.ts",
+    "tests/**/*.ts"
+  ]
+}
