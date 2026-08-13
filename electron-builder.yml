@@ -1,0 +1,60 @@
+# =============================================================================
+# electron-builder.yml —— dsh-desktop 的 Windows 分发包配置 (T17)
+#
+# 产物 (经 build.ps1 驱动, 输出到 release/):
+#   dsh-desktop-Setup-<版本>.exe   —— NSIS 安装器 (一键安装, 每用户)
+#   dsh-desktop-<版本>-win.zip     —— electron-builder 的 win zip
+#   win-unpacked\                  —— 免安装目录 (便携 zip 的源, 由 build.ps1 注入 node.exe)
+#
+# 关键设计:
+#   * 捆绑的 DeepSeek Harness 运行时 (@deepseek-ai/dsh) 通过 extraResources 放到
+#     resources/node_modules —— 是 app.asar 之外的“真实文件”。桌面应用 spawn 的是
+#     独立 node.exe (见 src/main/runtime/process-handle.ts), 它读不了 asar 虚拟路径,
+#     所以运行时绝不能打进 asar; src/main/profile/resolve.ts 的 resolveBinJs 从
+#     app.asar 逐级向上查找, 正好能在 resources/node_modules 命中。
+#   * node_modules/koffi (N-API 原生依赖) 由 electron-builder 自动包含进 asar 并
+#     自动解包到 app.asar.unpacked (electron-builder 对生产依赖的处理与 files 无关)。
+# =============================================================================
+
+appId: com.dsh.desktop
+productName: dsh-desktop
+
+directories:
+  output: release
+  # 构建资源目录 (installer.nsh 等, 由 build.ps1 生成; 不会被打进应用)
+  buildResources: build
+
+# 应用文件 (打入 app.asar):
+#   dist/**                          —— electron-vite 构建产物 (main/preload/renderer)
+#   resources/**                     —— 图标 + resources/plugins/*.tgz (插件打包产物)
+#   packages/@dsh-desktop/client/**  —— 客户端插件构建产物 (lib/ + package.json,
+#                                       离线插件安装 copyPluginLib 的源)
+# package.json 与生产依赖 node_modules 由 electron-builder 自动包含。
+files:
+  - dist/**
+  - resources/**
+  - packages/@dsh-desktop/client/**
+
+# 捆绑运行时: build.ps1 用便携版 npm 安装到 runtime/node_modules,
+# 这里原样复制到打包应用的 resources/node_modules (app.asar 之外的真实文件)。
+extraResources:
+  - from: runtime/node_modules
+    to: node_modules
+
+# 直接使用 node_modules 里已安装的 electron 发行版, 跳过 electron 二进制下载
+electronDist: node_modules/electron/dist
+
+win:
+  icon: resources/icon.ico
+  target:
+    - nsis
+    - zip
+  artifactName: dsh-desktop-${version}-win.${ext}
+
+nsis:
+  oneClick: true
+  perMachine: false
+  # build.ps1 生成: 把便携版 node.exe 放进安装目录 —— 桌面应用 spawn "node" 时,
+  # Windows CreateProcess 会先搜索 exe 所在目录, 因此无需修改系统 PATH 也能启动运行时。
+  include: build/installer.nsh
+  artifactName: dsh-desktop-Setup-${version}.${ext}
