@@ -3,7 +3,10 @@
   // 不含 src/main、src/preload —— 它们由 tsconfig.main.json / tsconfig.preload.json 单独检查。
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node"]
+    "types": ["node"],
+    // e2e boot-smoke 需要 import 构建产物 dist/main/index.js (纯 JS, 无声明文件);
+    // checkJs 默认 false, 只允许解析, 不检查 JS 内容。
+    "allowJs": true
   },
   "include": [
     "electron.vite.config.ts",
