@@ -1,42 +1,161 @@
 # dsh-desktop
 
-> A native Windows desktop app for DeepSeek Harness. Double-click to start. No Node.js, no command line, just a window.
+[中文](./README.zh.md) · **English**
+
+<p align="center">
+  <img src="resources/onboarding-whale.svg" width="56" alt="dsh-desktop" />
+</p>
+
+> One-click native desktop for DeepSeek Harness. No Node.js, no command line: install, double-click, and a window opens.
+
+> Frameless window with a drawn title bar, system tray, native Windows notifications, and a single instance. All of DeepSeek Harness, none of the setup.
+
+<p align="center">
+  <a href="https://github.com/SnowCrescenter-tech/dsh-desktop/releases"><img alt="version" src="https://img.shields.io/badge/version-0.2.0-4D6BFE" /></a>
+  <img alt="license" src="https://img.shields.io/badge/license-MIT-4D6BFE" />
+  <img alt="platform" src="https://img.shields.io/badge/platform-Windows-10131A" />
+  <img alt="compat" src="https://img.shields.io/badge/DeepSeek_Harness-0.1.0--rc.6-12A5A1" />
+  <a href="https://github.com/SnowCrescenter-tech/dsh-desktop"><img alt="stars" src="https://img.shields.io/github/stars/SnowCrescenter-tech/dsh-desktop?style=social" /></a>
+  <a href="https://github.com/SnowCrescenter-tech/dsh-desktop/fork"><img alt="forks" src="https://img.shields.io/github/forks/SnowCrescenter-tech/dsh-desktop?style=social" /></a>
+  <a href="https://github.com/SnowCrescenter-tech/dsh-desktop/actions/workflows/ci.yml"><img alt="ci" src="https://img.shields.io/github/actions/workflow/status/SnowCrescenter-tech/dsh-desktop/ci.yml?label=CI&color=4D6BFE" /></a>
+</p>
+
+<!-- Badge notes: version and license are static. Keep the version in sync with package.json / VERSION on every release, and switch it to a live release badge (github/v/release) once the first GitHub Release exists. Stars, forks and CI are live shields.io links and update on their own. Platform and DeepSeek Harness compatibility are static. -->
 
 ## What is this?
 
-DeepSeek Harness is DeepSeek's official agent framework. The official build is still a developer preview: to install it yourself you need Node 22.19+ or 24, pnpm, and a pile of command line steps. That is a high bar for most people.
+DeepSeek Harness is DeepSeek's official agent framework. The official build is still a developer preview: setting it up by hand means installing Node 22.19+ or Node 24, pnpm, and a stack of command line steps. That is a high bar for most people.
 
-dsh-desktop wraps the DeepSeek Harness Web UI in a native Windows desktop app. The interface is unchanged, it just gets a friendlier shell: the app lives in the system tray, the window has its own drawn title bar, messages use native Windows notifications, and only one instance can run at a time. Download, install, double-click the icon, and the window appears.
+dsh-desktop wraps the DeepSeek Harness Web UI in a native Windows desktop app. The interface itself is untouched, it just gets a friendlier shell: the app lives in the system tray, the window has its own drawn title bar, notifications use the standard Windows style, and only one instance can run at a time. Download, install, double-click, done.
+
+## Features
+
+- `▭` **Frameless window**: no system frame. The 36px title bar is drawn by the app and carries a live status dot: teal while the local service runs, grey while it starts, red when something fails. On Windows 11 the corners come from DWM, natively.
+- `▣` **System tray**: the app stays in the tray. Single-click brings the window back; right-click opens the menu: open main window, start on boot (checkbox), about, exit.
+- `◈` **Native notifications**: alerts use the standard Windows notification style, like any normal app, with a tray-balloon fallback where native support is missing.
+- `◎` **Single instance**: one copy at a time. A second double-click just brings the existing window to the front.
+- `↻` **Start on boot**: optionally launch in the background after sign-in, backed by a Windows registry Run key.
+- `▤` **First-run onboarding**: the first launch shows a guided dialog that asks for your DeepSeek API key. The key is saved only on this machine, in `<DSH_HOME>/.env`.
+- `⇄` **Port 0 auto-assign**: the service asks Windows for a free port on every launch (`--port 0`), so it never collides with port 3080 or any other program.
+
+## How it works
+
+dsh-desktop is an Electron shell. The main process owns the window, tray, notifications, auto-launch and the runtime supervisor that starts and watches the bundled DeepSeek Harness CLI. A preload bridge exposes a small, frozen `window.dshDesktop` API to the renderer. The window's own web contents draw the title bar, and a sandboxed `WebContentsView` below it hosts the DeepSeek Harness Web UI, which runs on the `desktop` profile: `@deepseek-ai/dsh-base`, `@deepseek-ai/dsh-web-app`, and `@dsh-desktop/client`.
+
+```mermaid
+flowchart TD
+    classDef main fill:#10131A,stroke:#4D6BFE,stroke-width:2px,color:#E8EAED
+    classDef bridge fill:#EEF1FF,stroke:#4D6BFE,color:#1A1D21
+    classDef renderer fill:#F4F6F9,stroke:#9AA1AC,color:#1A1D21
+    classDef web fill:#FFFFFF,stroke:#12A5A1,stroke-width:2px,color:#1A1D21
+    classDef bundle fill:#FDECEC,stroke:#E5484D,color:#1A1D21
+
+    style MAIN fill:#10131A,stroke:#4D6BFE,color:#E8EAED
+    style BRIDGE fill:#EEF1FF,stroke:#4D6BFE,color:#1A1D21
+    style RENDERER fill:#F4F6F9,stroke:#9AA1AC,color:#1A1D21
+    style WEB fill:#FFFFFF,stroke:#12A5A1,color:#1A1D21
+    style PROFILE fill:#FDECEC,stroke:#E5484D,color:#1A1D21
+
+    subgraph MAIN["Electron main process"]
+        M1["index.ts composition root<br/>single-instance lock · second instance reuses the window<br/>on quit: kill the dsh process tree · dispose tray"]
+        M2["window.ts window controller<br/>frameless window · 36px drawn title bar<br/>DWM rounded corners (Win11) · WebContentsView content area"]
+        M3["tray.ts system tray<br/>open main window · start on boot · about · exit"]
+        M4["notifications.ts native notifications<br/>AppUserModelID gate · balloon fallback"]
+        M5["runtime/state-machine.ts runtime supervisor<br/>spawns dsh --profile desktop --port 0<br/>parses the ready line · 120s timeout · tree kill"]
+        M6["profile/bootstrap.ts desktop profile<br/>writes the profile · installs the client plugin"]
+        M7["onboarding.ts first-run onboarding<br/>validates the API key · saves it to DSH_HOME/.env"]
+        M8["autolaunch.ts start on boot<br/>HKCU Run registry key"]
+        M9["ipc.ts contract handlers<br/>autolaunch · native · web broadcast"]
+    end
+
+    subgraph BRIDGE["Preload bridge"]
+        P["preload/index.ts<br/>contextBridge exposes window.dshDesktop<br/>window · status · onboarding · autolaunch · native · web"]
+    end
+
+    subgraph RENDERER["Renderer"]
+        R1["titlebar drawn title bar<br/>whale glyph · status dot · minimize/maximize/close"]
+        R2["onboarding dialog<br/>420px modal · enter key · Enter to submit"]
+    end
+
+    subgraph WEB["WebContentsView (sandboxed, no preload)"]
+        W["DeepSeek Harness Web UI<br/>served by the desktop profile"]
+    end
+
+    subgraph PROFILE["desktop profile bundles (mount order)"]
+        B1["@deepseek-ai/dsh-base"]
+        B2["@deepseek-ai/dsh-web-app (serves the Web UI)"]
+        B3["@dsh-desktop/client<br/>tray command bridge · native notify helper"]
+    end
+
+    M1 --> M2
+    M1 --> M3
+    M1 --> M4
+    M1 --> M5
+    M1 --> M6
+    M1 --> M7
+    M1 --> M8
+    M1 --> M9
+    R1 <--> P
+    R2 <--> P
+    P -- "window:* contract" --> M2
+    P -- "onboarding:* contract" --> M7
+    P -- "autolaunch:* / native:* / web:* contract" --> M9
+    M6 -. "writes the profile · installs the plugin" .-> B1
+    M5 -- "spawns the dsh CLI · loads the desktop profile" --> B1
+    B1 --> B2
+    B2 --> B3
+    B2 -. "serves the Web UI (127.0.0.1:port)" .-> W
+    B3 -. "tray command bridge · notify helper" .-> W
+    M5 -- "parses the ready line → loadDshUrl" --> W
+    M2 -. "mounted via contentView" .-> W
+
+    class M1,M2,M3,M4,M5,M6,M7,M8,M9 main
+    class P bridge
+    class R1,R2 renderer
+    class W web
+    class B1,B2,B3 bundle
+```
+
+## First run: what happens under the hood
+
+The first launch is an orchestrated sequence. If no API key is configured, a modal dialog asks for one. The profile is written to disk, the bundled CLI is spawned with `--profile desktop --port 0`, and the supervisor waits for the ready line (`dsh web: http://127.0.0.1:<port>`). Once parsed, the Web UI is loaded into the content view and the status dot turns teal.
+
+```mermaid
+flowchart TD
+    A["launch"] --> B{"got the single-instance lock?"}
+    B -- "no (another instance is running)" --> C["exit; the existing instance shows its window"]
+    B -- "yes" --> D{"API key configured?"}
+    D -- "no" --> E["onboarding dialog<br/>enter and save the key"]
+    E --> D
+    D -- "yes" --> F["prepare the desktop profile<br/>write files · install the client plugin"]
+    F --> G["spawn node dsh --profile desktop --port 0"]
+    G --> H{"ready line parsed?"}
+    H -- "dsh web: http://127.0.0.1:port" --> I["load the Web UI into the content view"]
+    I --> J["status dot: running"]
+    H -- "timeout / exited before ready" --> K["error view with a retry button"]
+```
 
 ## Quick start
 
-1. Download the latest release package from the Releases page
-2. Install it, then double-click the DeepSeek Harness icon on your desktop
-3. On first launch a setup window asks for your API key. Paste it in and the main window opens automatically
+1. Grab the latest installer from the Releases page.
+2. Install, then double-click the DeepSeek Harness icon on your desktop.
+3. On first launch, paste your DeepSeek API key into the setup dialog. The main window opens on its own.
 
 The app starts the service and opens the main window for you. No manual steps.
+
+## Screenshot
+
+<!-- TODO: 截图 -->
 
 ## First launch: setting your API key
 
 The first run shows a setup dialog where you enter your DeepSeek API key:
 
-1. Go to https://platform.deepseek.com and sign in
-2. On the API Keys page click "Create" to get a key that looks like `sk-...`
-3. Paste the key into the dialog, click save, and the main window opens
+1. Go to https://platform.deepseek.com and sign in.
+2. On the API Keys page click "Create" to get a key that looks like `sk-...`.
+3. Paste the key into the dialog, click save, and the main window opens.
 
 Your key is stored only on your own machine. It is never uploaded anywhere.
-
-## Window and system tray
-
-- **Frameless window**: no system default frame. The title bar is drawn by the app and supports dragging, minimize, maximize, and close
-- **System tray**: the app keeps a tray icon. Right-click it for the menu
-  - **Open main window**: show the main window
-  - **Start on boot**: launch in the background after sign-in
-  - **About**: show version info
-  - **Exit**: quit completely
-- **Close minimizes**: clicking the close button only minimizes to the tray, the app keeps running in the background. To actually quit, pick "Exit" from the tray menu
-- **Single instance**: only one instance runs at a time. Double-clicking the icon again just brings up the existing window
-- **Native notifications**: alerts use the standard Windows notification style, same as any normal app
 
 ## FAQ
 
@@ -68,10 +187,11 @@ The software is free and open source, but the DeepSeek API is pay-as-you-go. Cur
 
 ## Technical notes
 
-- Built on Electron with a bundled Node v24.19.0
-- Runs the Web UI via `@deepseek-ai/dsh@0.1.0-rc.6`
-- Data lives in `%USERPROFILE%\.dsh`
-- Key features: frameless window with a drawn title bar, system tray, native notifications, single-instance mode, first-run API key onboarding
+- Built with Electron 43 and a bundled Node runtime (v24.19.0).
+- Runs the Web UI through `@deepseek-ai/dsh@0.1.0-rc.6`.
+- Data and your API key live under `%USERPROFILE%\.dsh` (override with the `DSH_HOME` environment variable).
+- The `desktop` profile mounts, in order: `@deepseek-ai/dsh-base` → `@deepseek-ai/dsh-web-app` → `@dsh-desktop/client`.
+- The title bar, tray and onboarding follow a minimal, calm design language built on the DeepSeek brand palette (accent `#4D6BFE`, dark ink `#10131A`, paper `#F4F6F9`).
 
 ## Disclaimer
 

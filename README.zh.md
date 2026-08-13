@@ -1,84 +1,204 @@
-# DeepSeek Harness 桌面版(dsh-desktop)
+# DeepSeek Harness 桌面版（dsh-desktop）
 
-> 一个原生 Windows 桌面程序,双击就能用上 DeepSeek Harness。不装 Node,不敲命令,打开就是一个窗口。
+**中文** · [English](./README.md)
+
+<p align="center">
+  <img src="resources/onboarding-whale.svg" width="56" alt="dsh-desktop" />
+</p>
+
+> 一键原生桌面客户端，双击就能用上 DeepSeek Harness。不用装 Node，不用敲命令，安装完成，打开就是一个窗口。
+
+> 无边框窗口 · 系统托盘 · 原生通知 · 单实例运行。DeepSeek Harness 的全部能力，零搭建成本。
+
+<p align="center">
+  <a href="https://github.com/SnowCrescenter-tech/dsh-desktop/releases"><img alt="version" src="https://img.shields.io/badge/version-0.2.0-4D6BFE" /></a>
+  <img alt="license" src="https://img.shields.io/badge/license-MIT-4D6BFE" />
+  <img alt="platform" src="https://img.shields.io/badge/platform-Windows-10131A" />
+  <img alt="compat" src="https://img.shields.io/badge/DeepSeek_Harness-0.1.0--rc.6-12A5A1" />
+  <a href="https://github.com/SnowCrescenter-tech/dsh-desktop"><img alt="stars" src="https://img.shields.io/github/stars/SnowCrescenter-tech/dsh-desktop?style=social" /></a>
+  <a href="https://github.com/SnowCrescenter-tech/dsh-desktop/fork"><img alt="forks" src="https://img.shields.io/github/forks/SnowCrescenter-tech/dsh-desktop?style=social" /></a>
+  <a href="https://github.com/SnowCrescenter-tech/dsh-desktop/actions/workflows/ci.yml"><img alt="ci" src="https://img.shields.io/github/actions/workflow/status/SnowCrescenter-tech/dsh-desktop/ci.yml?label=CI&color=4D6BFE" /></a>
+</p>
+
+<!-- 徽章说明：version 与 license 为静态值，请在每次发版时同步更新 version（与 package.json / VERSION 保持一致），并在仓库发布首个 GitHub Release 后改为实时 release 徽章（github/v/release）。stars、forks 与 CI 为 shields.io 实时链接，自动更新。platform 与 DeepSeek Harness 兼容性为静态值。 -->
 
 ## 这是什么
 
-DeepSeek Harness 是 DeepSeek 官方的 agent 框架,能帮你把复杂任务交给 AI 一步步完成。不过官方目前还是开发者预览版,想自己装起来,得先准备 Node 22.19+ 或 Node 24、装好 pnpm,再对着命令行敲一堆命令去构建。对大多数非技术用户来说,这一步的门槛实在太高了。
+DeepSeek Harness 是 DeepSeek 官方的 agent 框架。官方目前还是开发者预览版，自己动手装的话，得先装 Node 22.19+ 或 Node 24、装好 pnpm，再对着命令行敲一串命令。对大多数非技术用户来说，这道门槛实在太高了。
 
-dsh-desktop 把 DeepSeek Harness 的 Web UI 包进了一个原生 Windows 桌面程序。界面没有任何改动,只是多了一层顺手的外壳:程序常驻系统托盘,窗口用自绘的标题栏,消息用 Windows 原生通知提醒,并且只允许一个实例运行。下载、安装、双击图标,窗口就出来了。
+dsh-desktop 把 DeepSeek Harness 的 Web UI 包进一个原生 Windows 桌面程序。界面本身完全不动，只是外面多了一层顺手的壳：程序常驻系统托盘，窗口用自绘标题栏，消息走 Windows 原生通知，同一时间只跑一个实例。下载、安装、双击，完事。
+
+## 功能特性
+
+- `▭` **无边框窗口**：没有系统默认边框，36px 标题栏由程序自绘，并带一个实时状态点。青色 = 本地服务运行中，灰色 = 启动中，红色 = 出错了。Windows 11 下窗口圆角由 DWM 原生渲染。
+- `▣` **系统托盘**：程序常驻托盘。单击图标唤回主窗口；右键菜单包含：打开主界面、开机自启（复选）、关于、退出。
+- `◈` **原生通知**：提醒走 Windows 原生通知样式，和普通应用一模一样；系统不支持时自动降级为托盘气泡。
+- `◎` **单实例运行**：同一时间只允许一个实例，重复双击只会把已有窗口唤到前台。
+- `↻` **开机自启**：可选，登录后在后台自动启动，由 Windows 注册表 Run 键实现。
+- `▤` **首次启动引导**：第一次运行弹出一个向导对话框，引导你输入 DeepSeek API Key。Key 只保存在这台电脑上，位置是 `<DSH_HOME>/.env`。
+- `⇄` **端口 0 自动分配**：每次启动都让系统挑一个空闲端口（`--port 0`），天然不会和 3080 或其他程序撞车。
+
+## 架构一览
+
+dsh-desktop 是一个 Electron 外壳。主进程负责窗口、托盘、通知、开机自启，以及启动并守护捆绑的 DeepSeek Harness CLI 的运行时监督器；preload 桥把一份精简且冻结的 `window.dshDesktop` API 暴露给渲染层；窗口自身的 web 内容绘制标题栏，其下方一个沙箱化的 WebContentsView 承载 DeepSeek Harness 的 Web UI；这套 Web UI 跑在 `desktop` profile 上，按序装载 `@deepseek-ai/dsh-base`、`@deepseek-ai/dsh-web-app` 和 `@dsh-desktop/client`。
+
+```mermaid
+flowchart TD
+    classDef main fill:#10131A,stroke:#4D6BFE,stroke-width:2px,color:#E8EAED
+    classDef bridge fill:#EEF1FF,stroke:#4D6BFE,color:#1A1D21
+    classDef renderer fill:#F4F6F9,stroke:#9AA1AC,color:#1A1D21
+    classDef web fill:#FFFFFF,stroke:#12A5A1,stroke-width:2px,color:#1A1D21
+    classDef bundle fill:#FDECEC,stroke:#E5484D,color:#1A1D21
+
+    style MAIN fill:#10131A,stroke:#4D6BFE,color:#E8EAED
+    style BRIDGE fill:#EEF1FF,stroke:#4D6BFE,color:#1A1D21
+    style RENDERER fill:#F4F6F9,stroke:#9AA1AC,color:#1A1D21
+    style WEB fill:#FFFFFF,stroke:#12A5A1,color:#1A1D21
+    style PROFILE fill:#FDECEC,stroke:#E5484D,color:#1A1D21
+
+    subgraph MAIN["Electron 主进程"]
+        M1["index.ts 组合根<br/>单实例锁 · 第二实例唤出已有窗口<br/>退出前: 终止 dsh 进程树 · 销毁托盘"]
+        M2["window.ts 窗口控制器<br/>无边框窗口 · 自绘 36px 标题栏<br/>Win11 DWM 圆角 · WebContentsView 内容区"]
+        M3["tray.ts 系统托盘<br/>打开主界面 · 开机自启 · 关于 · 退出"]
+        M4["notifications.ts 原生通知<br/>AppUserModelID 门控 · 气泡降级"]
+        M5["runtime/state-machine.ts 运行时监督器<br/>spawn dsh --profile desktop --port 0<br/>解析就绪行 · 120s 超时 · 树杀"]
+        M6["profile/bootstrap.ts desktop profile<br/>写盘 profile · 安装客户端插件"]
+        M7["onboarding.ts 首次运行引导<br/>校验 API Key · 写入 DSH_HOME/.env"]
+        M8["autolaunch.ts 开机自启<br/>HKCU Run 注册表键"]
+        M9["ipc.ts 契约处理器<br/>autolaunch · native · web 广播"]
+    end
+
+    subgraph BRIDGE["Preload 桥"]
+        P["preload/index.ts<br/>contextBridge 暴露 window.dshDesktop<br/>window · status · onboarding · autolaunch · native · web"]
+    end
+
+    subgraph RENDERER["渲染层"]
+        R1["titlebar 自绘标题栏<br/>鲸鱼图标 · 状态点 · 最小化/最大化/关闭"]
+        R2["onboarding 引导对话框<br/>420px 模态 · 输入 Key · Enter 提交"]
+    end
+
+    subgraph WEB["WebContentsView 内容区（沙箱化，无 preload）"]
+        W["DeepSeek Harness Web UI<br/>由 desktop profile 提供"]
+    end
+
+    subgraph PROFILE["desktop profile 装载顺序"]
+        B1["@deepseek-ai/dsh-base"]
+        B2["@deepseek-ai/dsh-web-app（提供 Web UI）"]
+        B3["@dsh-desktop/client<br/>托盘命令桥 · 原生通知助手"]
+    end
+
+    M1 --> M2
+    M1 --> M3
+    M1 --> M4
+    M1 --> M5
+    M1 --> M6
+    M1 --> M7
+    M1 --> M8
+    M1 --> M9
+    R1 <--> P
+    R2 <--> P
+    P -- "window:* 契约" --> M2
+    P -- "onboarding:* 契约" --> M7
+    P -- "autolaunch:* / native:* / web:* 契约" --> M9
+    M6 -. "写盘 profile · 安装插件" .-> B1
+    M5 -- "spawn dsh CLI · 装载 desktop profile" --> B1
+    B1 --> B2
+    B2 --> B3
+    B2 -. "提供 Web UI（127.0.0.1:port）" .-> W
+    B3 -. "托盘命令桥 · 通知助手" .-> W
+    M5 -- "解析就绪行 → loadDshUrl" --> W
+    M2 -. "经 contentView 挂载" .-> W
+
+    class M1,M2,M3,M4,M5,M6,M7,M8,M9 main
+    class P bridge
+    class R1,R2 renderer
+    class W web
+    class B1,B2,B3 bundle
+```
+
+## 首次启动：背后发生了什么
+
+首次启动是一条编排好的流水线。如果没有配置 API Key，先弹模态对话框引导输入；然后写盘 desktop profile，以 `--profile desktop --port 0` 拉起捆绑的 CLI，监督器等待就绪行（`dsh web: http://127.0.0.1:<port>`）。一旦解析到，就把 Web UI 载入内容区，状态点变青。
+
+```mermaid
+flowchart TD
+    A["启动 launch"] --> B{"拿到单实例锁?"}
+    B -- "否（已有实例在运行）" --> C["本进程退出，已有实例唤出主窗口"]
+    B -- "是" --> D{"已配置 API Key?"}
+    D -- "否" --> E["引导对话框<br/>输入并保存 Key"]
+    E --> D
+    D -- "是" --> F["准备 desktop profile<br/>写盘 + 安装客户端插件"]
+    F --> G["spawn node dsh --profile desktop --port 0"]
+    G --> H{"解析就绪行?"}
+    H -- "dsh web: http://127.0.0.1:port" --> I["把 Web UI 载入内容区"]
+    I --> J["状态点：运行中 running"]
+    H -- "超时 / 就绪前退出" --> K["错误视图 + 重试按钮"]
+```
 
 ## 三步上手
 
-1. 到本项目 Releases 页面下载最新安装包
-2. 安装完成后,双击桌面上的 DeepSeek Harness 图标启动
-3. 首次启动会弹出"设置 API Key"引导窗口,粘贴你的 Key 后自动进入主界面
+1. 到 Releases 页面下载最新安装包。
+2. 安装完成，双击桌面上的 DeepSeek Harness 图标。
+3. 首次启动时，在引导对话框里粘贴你的 DeepSeek API Key，主窗口会自动打开。
 
-程序会自动启动服务、打开主界面,这些都不需要你手动操作。
+程序会自动启动服务、打开主界面，这些都不需要你手动操作。
 
-## 首次启动:设置 API Key
+## 截图
 
-第一次运行会先弹出引导窗口,让你填写 DeepSeek API Key:
+<!-- TODO: 截图 -->
 
-1. 打开 https://platform.deepseek.com,注册并登录
-2. 在 API Keys 页面点击"创建",会得到一个形如 `sk-xxxxxxxx` 的 Key
-3. 把 Key 粘贴进引导窗口,点击保存,主界面就会自动打开
+## 首次启动：设置 API Key
 
-你的 Key 只会写在自己电脑上,不会上传到任何地方。
+第一次运行会先弹出引导窗口，让你填写 DeepSeek API Key：
 
-## 窗口与系统托盘
+1. 打开 https://platform.deepseek.com，注册并登录。
+2. 在 API Keys 页面点击"创建"，会得到一个形如 `sk-...` 的 Key。
+3. 把 Key 粘贴进引导窗口，点击保存，主界面就会自动打开。
 
-- **无边框窗口**:窗口没有系统默认边框,标题栏由程序自己绘制,支持拖动、最小化、最大化、关闭
-- **系统托盘**:程序常驻托盘图标,右键可打开菜单
-  - **打开主界面**:显示主窗口
-  - **开机自启**:开机后在后台自动启动
-  - **关于**:查看版本信息
-  - **退出**:完全退出程序
-- **关闭即最小化**:点窗口的关闭按钮只是最小化到托盘,程序继续在后台运行;要真正结束程序,请从托盘菜单选择"退出"
-- **单实例运行**:同一时间只会有一个实例,重复双击图标会直接唤出已有的窗口
-- **原生通知**:提醒使用 Windows 原生通知样式,和普通应用一致
+你的 Key 只会写在自己电脑上，不会上传到任何地方。
 
 ## 常见问题
 
-**杀毒软件报毒、SmartScreen 提示怎么办?**
+**杀毒软件报毒、SmartScreen 提示怎么办？**
 
-桌面应用打包后没有数字签名,第一次运行时 Windows SmartScreen 可能会提示"Windows 已保护你的电脑",部分杀毒软件也可能误报。这是打包软件的常见情况,不代表程序有问题。
+桌面应用打包后没有数字签名，第一次运行时 Windows SmartScreen 可能会提示"Windows 已保护你的电脑"，部分杀毒软件也可能误报。这是打包软件的常见情况，不代表程序有问题。
 
-- SmartScreen 提示:点击"更多信息" → "仍要运行"
-- Windows Defender:病毒和威胁防护 → 排除项 → 添加排除项
-- 360 安全卫士:木马查杀 → 信任区 → 添加信任目录
-- 火绒安全:防护中心 → 病毒防护 → 信任区 → 添加文件/目录
-- 腾讯电脑管家:病毒查杀 → 信任区
+- SmartScreen 提示：点击"更多信息" → "仍要运行"
+- Windows Defender：病毒和威胁防护 → 排除项 → 添加排除项
+- 360 安全卫士：木马查杀 → 信任区 → 添加信任目录
+- 火绒安全：防护中心 → 病毒防护 → 信任区 → 添加文件/目录
+- 腾讯电脑管家：病毒查杀 → 信任区
 
-**能安装在中文路径吗?**
+**能安装在中文路径吗？**
 
-可以。桌面版不依赖命令行脚本,装在带中文的路径(比如"软件\DeepSeek Harness")下也能正常运行。
+可以。桌面版不依赖命令行脚本，装在带中文的路径（比如"软件\DeepSeek Harness"）下也能正常运行。
 
-**端口被占用怎么办?**
+**端口被占用怎么办？**
 
-服务监听端口由系统自动分配(端口 0),启动时系统会挑一个空闲端口,天然不会和 3080 或其他程序冲突,也不需要手动配置。
+服务监听端口由系统自动分配（端口 0），启动时系统会挑一个空闲端口，天然不会和 3080 或其他程序冲突，也不需要手动配置。
 
-**关掉窗口后程序为什么还在?**
+**关掉窗口后程序为什么还在？**
 
-关闭窗口默认是最小化到托盘,程序仍在后台运行。从托盘菜单里选"退出"才会完全结束。
+关闭窗口默认是最小化到托盘，程序仍在后台运行。从托盘菜单里选"退出"才会完全结束。
 
-**需要付费吗?**
+**需要付费吗？**
 
-软件本身是免费开源项目,但调用 DeepSeek 的 API 由官方按量计费。当前参考价(每百万 tokens):deepseek-v4-flash 输入 $0.14、输出 $0.28;deepseek-v4-pro 输入 $0.435、输出 $0.87;命中缓存时输入价格要低得多。具体价格以 https://api-docs.deepseek.com/quick_start/pricing 为准,2026-08-16 起官方改为峰谷计价。
+软件本身是免费开源项目，但调用 DeepSeek 的 API 由官方按量计费。当前参考价（每百万 tokens）：deepseek-v4-flash 输入 $0.14、输出 $0.28；deepseek-v4-pro 输入 $0.435、输出 $0.87；命中缓存时输入价格要低得多。具体价格以 https://api-docs.deepseek.com/quick_start/pricing 为准，2026-08-16 起官方改为峰谷计价。
 
 ## 技术说明
 
-- 基于 Electron 构建,内置 Node v24.19.0
-- 使用 `@deepseek-ai/dsh@0.1.0-rc.6` 启动 Web UI
-- 数据保存在 `%USERPROFILE%\.dsh`
-- 主要功能:无边框窗口与自绘标题栏、系统托盘、原生通知、单实例运行、首次启动 API Key 引导
+- 基于 Electron 43 构建，内置 Node 运行时 v24.19.0。
+- 通过 `@deepseek-ai/dsh@0.1.0-rc.6` 启动 Web UI。
+- 数据与 API Key 保存在 `%USERPROFILE%\.dsh`（可用 `DSH_HOME` 环境变量覆盖）。
+- desktop profile 按序装载：`@deepseek-ai/dsh-base` → `@deepseek-ai/dsh-web-app` → `@dsh-desktop/client`。
+- 标题栏、托盘与引导遵循一套简约沉静的设计语言，配色取自 DeepSeek 品牌蓝（强调色 `#4D6BFE`、深墨 `#10131A`、纸白 `#F4F6F9`）。
 
 ## 免责声明
 
-本项目是社区作品,非 DeepSeek 官方出品。DeepSeek Harness 目前处于 developer preview 阶段,后续可能有破坏性变更。本项目基于 MIT 协议开源,使用中遇到的问题请优先查阅官方文档。
+本项目是社区作品，非 DeepSeek 官方出品。DeepSeek Harness 目前处于 developer preview 阶段，后续可能有破坏性变更。本项目基于 MIT 协议开源，使用中遇到的问题请优先查阅官方文档。
 
 ## 相关链接
 
-- DeepSeek Harness 官方仓库:https://github.com/deepseek-ai/deepseek-harness
-- API 控制台:https://platform.deepseek.com
-- 项目 Topics:dsh-plugin、dsh、deepseek-harness、windows、electron、desktop
+- DeepSeek Harness 官方仓库：https://github.com/deepseek-ai/deepseek-harness
+- API 控制台：https://platform.deepseek.com
+- 项目 Topics：dsh-plugin、dsh、deepseek-harness、windows、electron、desktop
