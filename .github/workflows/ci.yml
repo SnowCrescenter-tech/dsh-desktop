@@ -15,10 +15,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js 24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -41,14 +41,16 @@ jobs:
           npm run lint
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Test
-        shell: pwsh
-        run: |
-          npm run test
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
+      # Build 必须在 Test 之前: e2e boot-smoke 直接 import 构建产物
+      # dist/main/index.js (见 vitest.e2e.config.ts)。
       - name: Build
         shell: pwsh
         run: |
           npm run build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Test
+        shell: pwsh
+        run: |
+          npm run test
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
