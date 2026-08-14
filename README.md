@@ -11,7 +11,7 @@
 > 无边框窗口 · 系统托盘 · 原生通知 · 单实例运行。DeepSeek Harness 的全部能力，零搭建成本。
 
 <p align="center">
-  <a href="https://github.com/SnowCrescenter-tech/dsh-desktop/releases"><img alt="version" src="https://img.shields.io/badge/version-0.2.0-4D6BFE" /></a>
+  <a href="https://github.com/SnowCrescenter-tech/dsh-desktop/releases"><img alt="version" src="https://img.shields.io/github/v/release/SnowCrescenter-tech/dsh-desktop?label=version&color=4D6BFE" /></a>
   <img alt="license" src="https://img.shields.io/badge/license-MIT-4D6BFE" />
   <img alt="platform" src="https://img.shields.io/badge/platform-Windows-10131A" />
   <img alt="compat" src="https://img.shields.io/badge/DeepSeek_Harness-0.1.0--rc.6-12A5A1" />
@@ -20,7 +20,7 @@
   <a href="https://github.com/SnowCrescenter-tech/dsh-desktop/actions/workflows/ci.yml"><img alt="ci" src="https://img.shields.io/github/actions/workflow/status/SnowCrescenter-tech/dsh-desktop/ci.yml?label=CI&color=4D6BFE" /></a>
 </p>
 
-<!-- Badge notes: version and license are static. Keep the version in sync with package.json / VERSION on every release, and switch it to a live release badge (github/v/release) once the first GitHub Release exists. Stars, forks and CI are live shields.io links and update on their own. Platform and DeepSeek Harness compatibility are static. -->
+<!-- Badge notes: version badge is live (github/v/release, resolves to the latest published release). Stars, forks and CI are live shields.io links and update on their own. Platform and DeepSeek Harness compatibility are static. -->
 
 ---
 
