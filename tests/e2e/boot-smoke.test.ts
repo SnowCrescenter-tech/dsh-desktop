@@ -18,6 +18,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { electronMock } from './electron-mock.js';
@@ -47,6 +48,14 @@ vi.mock('electron-updater', () => ({
 
 /** 构建产物绝对路径 (仅用于存在性检查与报错提示) */
 const BUNDLE_ABS_PATH = join(import.meta.dirname, '..', '..', 'dist', 'main', 'index.js');
+
+/**
+ * 构建产物动态 import URL (file:// URL)。
+ * 必须用「变量」而非字面量: 字面量 import('../../dist/main/index.js') 会被
+ * 类型检查器静态解析, CI 干净 checkout (尚无 dist/) 会报 TS2307;
+ * 变量形式运行时行为不变 (vitest 直接加载构建产物), 但类型检查不再解析模块。
+ */
+const BUNDLE_URL = pathToFileURL(BUNDLE_ABS_PATH).href;
 
 /**
  * 假 dsh CLI 脚本: 把自身 pid 写入 cwd (spawn 的 cwd = DSH_HOME), 打印就绪行后
@@ -94,7 +103,7 @@ async function bootApp(lockResult: boolean): Promise<void> {
   process.env['DSH_HOME'] = dshHome;
   process.env['DEEPSEEK_API_KEY'] = 'sk-e2e-boot-smoke';
   vi.resetModules();
-  await import('../../dist/main/index.js');
+  await import(BUNDLE_URL);
 }
 
 /** 触发 app.whenReady 回调 —— bootstrap 内的完整装配流程由此开始 */

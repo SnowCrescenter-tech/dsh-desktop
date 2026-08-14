@@ -44,10 +44,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -58,11 +58,13 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test
-        run: npm run test
-
+      # Build 必须在 Test 之前: e2e boot-smoke 直接 import 构建产物
+      # dist/main/index.js (见 vitest.e2e.config.ts)。
       - name: Build
         run: npm run build
+
+      - name: Test
+        run: npm run test
 
       # build.ps1: electron-vite 构建 + 运行时捆绑 + electron-builder
       # (NSIS 安装器 + win zip) + 便携 zip。产物在 release/。
