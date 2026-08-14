@@ -39,13 +39,41 @@
 3. 运行中阻止系统睡眠——一个 Win32 调用，1 天
 4. 状态点增强（agent 运行中变蓝）——复用现有 6px 点
 
-## Phase D — 全平台抽象（架构预留，v0.3+ 逐步补）
+## Phase D — 全平台兼容（目标：Windows / macOS / Linux）
 
-| 抽象 | Windows | macOS | Linux |
-|---|---|---|---|
-| `AutolaunchBackend` | 注册表 Run 键 | `LaunchAgents/*.plist` | `autostart/*.desktop` |
-| 数据目录 | — | `app.getPath('userData')` 替换 `%LOCALAPPDATA%` | — |
-| 进程树强杀 | `taskkill /T /F` | SIGTERM + pkill | SIGTERM + pkill |
+**目标**：同一套代码，三平台可构建。Windows 是当前唯一已落地平台；macOS / Linux 通过「平台抽象层」逐步补齐，不改主流程。
+
+### D1. 平台抽象清单（当前 Windows 特定点 → 抽象接口 → 三平台实现）
+
+| # | 当前 Windows 实现 | 抽象接口 | macOS | Linux | 涉及文件 |
+|---|---|---|---|---|---|
+| 1 | `HKCU\...\CurrentVersion\Run` 注册表 | `AutolaunchBackend` | `~/Library/LaunchAgents/*.plist`（launchd） | `~/.config/autostart/*.desktop` | `src/main/autolaunch.ts` |
+| 2 | `%LOCALAPPDATA%\dsh-desktop` | `app.getPath('userData')`（Electron 跨平台） | `~/Library/Application Support/dsh-desktop` | `~/.config/dsh-desktop` | `src/main/store.ts` |
+| 3 | `taskkill /T /F` 树杀 | `killProcessTree(pid)` | SIGTERM + `pkill -P` | SIGTERM + `pkill -P` | `src/main/runtime/process-handle.ts` |
+| 4 | DWM 圆角（`DWMWA_WINDOW_CORNER_PREFERENCE`） | `applyRoundedCorners(win)` | 原生圆角（无需处理） | 由 WM 决定（无需处理） | `src/main/dwm.ts`、`winver.ts` |
+| 5 | Windows Toast + AppUserModelID | `notify(payload)` | `new Notification`（Electron 原生） | `new Notification`（Electron 原生） | `src/main/notifications.ts` |
+
+### D2. 其余平台差异点（需逐一确认，不阻塞 Windows）
+
+| 差异点 | 说明 | 处理 |
+|---|---|---|
+| 托盘图标 | macOS 托盘用 template image（16×16 单色） | 按平台加载不同尺寸图标 |
+| 单实例 | `requestSingleInstanceLock` 跨平台可用 | 无需改 |
+| 快捷键 | macOS 用 `Cmd`，Windows/Linux 用 `Ctrl` | `Menu` 模板按平台 |
+| 沙箱 | macOS `sandbox-exec`（可选强化） | Linux 可用 bwrap；Windows 无原生沙箱 |
+
+### D3. 执行节奏（不单独立项，随其他改动顺手补）
+
+1. **D1-#2 数据目录**：一次小改（`%LOCALAPPDATA%` → `app.getPath('userData')`），立即可做，跨平台收益最大。
+2. **D1-#3 树杀**：随「运行完成通知 / 阻止睡眠」等 Phase C 改动顺手加 `platform` 分派。
+3. **D1-#1 自启**：抽 `AutolaunchBackend` 接口，先实现 Windows，macOS/Linux 后端留 TODO（接口化即完成 80%）。
+4. **D1-#4/#5**：已基本就绪（DWM/通知已做 win32 守卫，非 Windows 自然走原生路径）。
+
+### D4. 验收标准（上 macOS/Linux 前的门）
+
+- [ ] `npm run build` 在 macOS / Linux runner 上通过（`electron-builder --mac` / `--linux`）
+- [ ] 三平台都能：单实例 + 托盘 + 通知 + 自启 + 首启引导 + 端口 0 + 自动更新（macOS 用 `latest-mac.yml`）
+- [ ] 中文路径 / 非 ASCII 用户名在所有平台正常
 
 ## Phase E — 生态内容（并行，不影响桌面端）
 
