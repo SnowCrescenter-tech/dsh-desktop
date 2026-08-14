@@ -27,6 +27,56 @@ publish:
   owner: SnowCrescenter-tech
   repo: dsh-desktop
 
+# GitHub Release 正文 (双语)。发布步骤 `electron-builder --publish always`
+# 会把它写进 Release notes (version 从 package.json 读取)。
+releaseInfo:
+  releaseNotes: |
+    # dsh-desktop v0.2.0
+
+    DeepSeek Harness 的 Windows 原生桌面壳 —— 无需 Node.js、无需命令行，安装后双击即用。
+
+    ## 功能
+
+    - 无边框窗口 + 自绘标题栏（实时状态点：青色=运行中 / 灰色=启动中 / 红色=异常）
+    - 系统托盘（单击恢复窗口；右键菜单：打开主窗口 / 开机自启 / 关于 / 退出）
+    - 原生 Windows 通知
+    - 单实例（重复双击只唤起已有窗口）
+    - 开机自启（注册表 Run 键）
+    - 首启引导：引导填写 DeepSeek API Key，仅保存在本机 `%USERPROFILE%\.dsh\.env`
+    - 端口 0 自动分配：每次启动自动获取空闲端口，永不与 3080 或其他程序冲突
+    - 自动更新：安装版后台静默检查更新，就绪后托盘菜单「重启并更新」一键应用
+
+    ## 本版说明
+
+    - 内置 Node.js v24.19.0 运行时 + `@deepseek-ai/dsh@0.1.0-rc.6`
+    - 两种产物：NSIS 安装器（自动更新）与便携 zip（解压即用）
+    - 未签名，首次运行可能触发 SmartScreen/杀软提示，属正常现象
+    - 中文文档（中英一键切换）：仓库 README 与 VitePress 文档站
+
+    ---
+
+    # dsh-desktop v0.2.0 (English)
+
+    A native Windows desktop shell for DeepSeek Harness — no Node.js, no CLI, double-click to run.
+
+    ## Features
+
+    - Frameless window with a drawn title bar (live status dot: teal = running / grey = starting / red = error)
+    - System tray (single-click restores; right-click menu: open window / start on boot / about / exit)
+    - Native Windows notifications
+    - Single instance (a second launch just brings the window to the front)
+    - Start on boot (registry Run key)
+    - First-run onboarding: guides you through adding your DeepSeek API key, stored locally in `%USERPROFILE%\.dsh\.env`
+    - Port 0 auto-assign: a free port is chosen at every launch, never colliding with 3080 or anything else
+    - Auto-update: installed builds check silently in the background and apply via the tray menu
+
+    ## Notes
+
+    - Bundles Node.js v24.19.0 and `@deepseek-ai/dsh@0.1.0-rc.6`
+    - Two artifacts: NSIS installer (with auto-update) and a portable zip (extract & run)
+    - Unsigned — SmartScreen / antivirus prompts on first run are expected
+    - Bilingual docs with instant zh/en switching: repo README + VitePress site
+
 directories:
   output: release
   # 构建资源目录 (installer.nsh 等, 由 build.ps1 生成; 不会被打进应用)
